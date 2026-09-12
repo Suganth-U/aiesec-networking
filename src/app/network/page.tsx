@@ -170,7 +170,7 @@ export default function NetworkPage() {
   }
 
   // ── FINISHED ──
-  if (session.status === 'finished') {
+  if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === 3)) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm text-center">
@@ -178,8 +178,12 @@ export default function NetworkPage() {
             <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/20 flex items-center justify-center mb-5">
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
-            <h2 className="text-xl font-bold text-white mb-1">Session Complete! 🎉</h2>
-            <p className="text-sm text-white/50 mb-4">The four nations have united. Great connections, {user.name}!</p>
+            <h2 className="text-2xl font-bold text-white mb-6">🎉 You Did It!</h2>
+            <div className="space-y-4 text-sm md:text-base text-white/80 font-medium leading-relaxed">
+              <p>Every great relationship starts with a simple conversation.</p>
+              <p>Today, you didn't just meet new people you built new connections.</p>
+              <p className="text-emerald-400 font-bold pt-2">Thank you for being part of this journey</p>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -197,7 +201,7 @@ export default function NetworkPage() {
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
             <h2 className="text-xl font-bold text-white mb-1">Round Complete! ✅</h2>
-            <p className="text-sm text-white/50 mb-4">Great bending session! Next round incoming.</p>
+            <p className="text-sm text-white/50 mb-4">Great session! Take a quick breather.</p>
             <div className="flex items-center justify-center gap-2 text-xs text-white/40">
               <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               Waiting for Round {session.currentRound + 2}...
@@ -256,14 +260,9 @@ export default function NetworkPage() {
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight -mt-4">
               {targetNation}
             </h2>
-            <p className="text-sm text-white/50 mb-4">{targetGroup?.name}</p>
+            <p className="text-sm text-white/50 mb-4">{targetGroup?.name.split(' - ')[1]}</p>
 
-            {targetColors && (
-              <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-bold mb-6 ${targetColors.badge}`}>
-                <div className={`w-4 h-4 rounded-full ${targetColors.dot}`} />
-                {targetGroup?.color} Group
-              </div>
-            )}
+
 
             {/* Icebreaker */}
             <div className="w-full space-y-3 mt-auto">

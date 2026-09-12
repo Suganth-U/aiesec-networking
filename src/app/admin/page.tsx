@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc } from 'firebase/firestore';
 import { Session, User } from '@/types';
-import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut } from 'lucide-react';
+import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle } from 'lucide-react';
 import { GROUPS } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 
@@ -30,6 +30,17 @@ export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [newQuestion, setNewQuestion] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  // ── Confirm Modal State ──
+  const [confirmConfig, setConfirmConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    isDangerous: false,
+    onConfirm: () => {}
+  });
 
   // ── Load/Initialize admin password from Firestore ──
   useEffect(() => {
@@ -157,7 +168,7 @@ export default function AdminPage() {
 
   const nextRound = async () => {
     if (!session) return;
-    const nextRnd = Math.min(session.currentRound + 1, 2);
+    const nextRnd = Math.min(session.currentRound + 1, 3);
     await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'active' });
     users.forEach((u) => {
       updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
@@ -206,6 +217,14 @@ export default function AdminPage() {
   const removeQuestion = async (index: number) => {
     if (!session) return;
     await updateSession({ questions: session.questions.filter((_, i) => i !== index) });
+  };
+
+  const saveEditQuestion = async (index: number) => {
+    if (!session || !editValue.trim()) return;
+    const newQuestions = [...session.questions];
+    newQuestions[index] = editValue.trim();
+    await updateSession({ questions: newQuestions });
+    setEditingIndex(null);
   };
 
   // ══════════════════════════════════════
@@ -342,6 +361,56 @@ export default function AdminPage() {
     </div>
   );
 
+  // ══════════════════════════════════════
+  // CONFIRM MODAL
+  // ══════════════════════════════════════
+  const confirmModal = confirmConfig.isOpen && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+        onClick={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+      
+      {/* Dialog */}
+      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 overflow-hidden">
+        {/* Top colored accent line */}
+        <div className={`absolute top-0 left-0 right-0 h-1.5 ${confirmConfig.isDangerous ? 'bg-red-500' : 'bg-emerald-500'}`} />
+        
+        <div className="flex gap-4 mb-6 mt-1">
+          <div className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${confirmConfig.isDangerous ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="pt-1">
+            <h3 className="text-lg font-bold text-zinc-900">{confirmConfig.title}</h3>
+            <p className="text-sm text-zinc-600 mt-1 leading-relaxed">
+              {confirmConfig.message}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3 justify-end">
+          <button
+            onClick={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmConfig.onConfirm}
+            className={`px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-sm active:scale-95 ${
+              confirmConfig.isDangerous 
+                ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' 
+                : 'bg-zinc-900 hover:bg-zinc-800'
+            }`}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // Loading
   if (!session) {
     return (
@@ -368,6 +437,7 @@ export default function AdminPage() {
   return (
     <div className="flex-1 bg-white text-zinc-900 p-4 sm:p-8">
       {changePasswordModal}
+      {confirmModal}
 
       <div className="max-w-6xl mx-auto">
 
@@ -463,7 +533,7 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Current Round</p>
-                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 3</span></p>
+                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 4</span></p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={resetSession} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-all active:scale-[0.98]">
@@ -477,7 +547,7 @@ export default function AdminPage() {
                     <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button onClick={nextRound} disabled={session.currentRound >= 2} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                    <button onClick={nextRound} disabled={session.currentRound >= 3} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
                       Next <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -489,7 +559,7 @@ export default function AdminPage() {
             <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="w-4 h-4 text-zinc-400" />
-                <h2 className="text-sm font-semibold text-zinc-900">Discussion Prompts</h2>
+                <h2 className="text-sm font-semibold text-zinc-900">Discussion Questions</h2>
               </div>
 
               <div className="flex gap-2 mb-4">
@@ -498,8 +568,8 @@ export default function AdminPage() {
                   value={newQuestion}
                   onChange={(e) => setNewQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addQuestion()}
-                  placeholder="Type a new icebreaker question..."
-                  className="flex-1 bg-white/5 backdrop-blur-md border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+                  placeholder="Type a new discussion question..."
+                  className="flex-1 bg-white border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
                 />
                 <button
                   onClick={addQuestion}
@@ -512,14 +582,57 @@ export default function AdminPage() {
 
               <ul className="space-y-2">
                 {session.questions.map((q, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3 p-3 bg-white/5 backdrop-blur-md rounded-xl border border-zinc-100 group">
-                    <span className="text-sm text-zinc-700">{q}</span>
-                    <button
-                      onClick={() => removeQuestion(i)}
-                      className="p-1.5 rounded-lg text-zinc-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <li key={i} className="flex items-center justify-between gap-3 p-3 bg-white/5 backdrop-blur-md rounded-xl border border-zinc-100 group min-h-[52px]">
+                    {editingIndex === i ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <input
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveEditQuestion(i);
+                            if (e.key === 'Escape') setEditingIndex(null);
+                          }}
+                          autoFocus
+                          className="flex-1 bg-white border border-zinc-200 rounded-lg h-8 px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+                        />
+                        <button
+                          onClick={() => saveEditQuestion(i)}
+                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditingIndex(null)}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-all"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="text-sm text-zinc-700 leading-relaxed">{q}</span>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingIndex(i);
+                              setEditValue(q);
+                            }}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                            title="Edit question"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => removeQuestion(i)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                            title="Delete question"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>

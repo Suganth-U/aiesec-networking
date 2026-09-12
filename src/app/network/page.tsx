@@ -25,7 +25,8 @@ export default function NetworkPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [myGroupId, setMyGroupId] = useState<number | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
-  const [icebreaker, setIcebreaker] = useState<string | null>(null);
+  const [icebreakers, setIcebreakers] = useState<string[]>([]);
+  const [checkedQuestions, setCheckedQuestions] = useState<Record<number, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [userLoaded, setUserLoaded] = useState(false);
@@ -72,7 +73,9 @@ export default function NetworkPage() {
 
   const spinIcebreaker = () => {
     if (!session?.questions?.length) return;
-    setIcebreaker(session.questions[Math.floor(Math.random() * session.questions.length)]);
+    const shuffled = [...session.questions].sort(() => 0.5 - Math.random());
+    setIcebreakers(shuffled.slice(0, 3));
+    setCheckedQuestions({});
   };
 
   // ── Error states ──
@@ -129,7 +132,7 @@ export default function NetworkPage() {
   const myElement = FO_TO_ELEMENT[myFO] || 'water';
   const myNation = FO_TO_NATION[myFO] || 'Water Tribe';
 
-  const targetGroupId = session.currentRound < 3 ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
+  const targetGroupId = session.currentRound < 4 ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
   const targetGroup = targetGroupId ? getGroupById(targetGroupId) : null;
   const targetColors = targetGroup ? getGroupColor(targetGroup.color) : null;
   const targetFO = targetGroup?.name.split(' - ')[0] || 'iGT';
@@ -223,7 +226,7 @@ export default function NetworkPage() {
         <div className={`flex items-center justify-between px-4 py-3 rounded-xl border mb-4 ${isUrgent ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isUrgent ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-            <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of 3</span>
+            <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of 4</span>
           </div>
           <div className={`text-2xl font-bold font-mono tracking-tight ${isUrgent ? 'text-red-400' : 'text-white'}`}>
             {minutes}:{seconds.toString().padStart(2, '0')}
@@ -268,11 +271,21 @@ export default function NetworkPage() {
                 <Sparkles className="w-4 h-4 text-amber-400" /> Get a Conversation Starter
               </button>
               <AnimatePresence>
-                {icebreaker && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                      <p className="text-sm text-amber-300 font-medium italic">&ldquo;{icebreaker}&rdquo;</p>
-                    </div>
+                {icebreakers.length > 0 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden space-y-2 mt-3">
+                    {icebreakers.map((q, idx) => (
+                      <div key={idx} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left">
+                        <button 
+                          onClick={() => setCheckedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ${checkedQuestions[idx] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 text-transparent'}`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </button>
+                        <p className={`text-sm font-medium transition-colors ${checkedQuestions[idx] ? 'text-white/40 line-through' : 'text-white/90'}`}>
+                          {q}
+                        </p>
+                      </div>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -282,7 +295,11 @@ export default function NetworkPage() {
 
         {/* Finish */}
         <div className="mt-4 pb-4">
-          <button onClick={handleFinishRound} disabled={isFinishing} className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-cyan-500/20 disabled:opacity-50">
+          <button 
+            onClick={handleFinishRound} 
+            disabled={isFinishing || icebreakers.length === 0 || !icebreakers.every((_, i) => checkedQuestions[i])} 
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+          >
             {isFinishing ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  optimizeFonts: false,
+  // Empty config
 };
 
 export default nextConfig;

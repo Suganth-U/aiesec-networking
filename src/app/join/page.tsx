@@ -224,10 +224,10 @@ export default function JoinPage() {
                     >
                       <SymbolComponent size={40} />
                       <div className="flex-1">
-                        <p className={`font-avatar text-lg ${frontOffice === n.value ? n.text : 'text-white'}`}>
-                          {n.nation} <span className="text-white/40 text-sm font-sans">({n.value})</span>
+                        <p className={`flex items-center gap-2 font-avatar text-xl ${frontOffice === n.value ? n.text : 'text-white'}`}>
+                          {n.nation} <span className="text-white/70 tracking-widest text-2xl">({n.value})</span>
                         </p>
-                        <p className="text-xs text-white/40">{n.desc}</p>
+                        <p className="text-xs text-white/50">{n.desc}</p>
                       </div>
                     </motion.button>
                   );

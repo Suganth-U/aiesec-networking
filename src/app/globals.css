@@ -25,6 +25,8 @@
   --color-border: #e4e4e7;
   --color-input: #e4e4e7;
   --color-ring: #09090b;
+  
+  --font-avatar: var(--font-cinzel), serif;
 }
 
 @layer base {

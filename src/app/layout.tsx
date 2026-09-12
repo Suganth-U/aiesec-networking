@@ -3,6 +3,11 @@ import './globals.css';
 import Logo from '@/components/Logo';
 import AnimatedBackground from '@/components/AnimatedBackground';
 
+import { Cinzel, Noto_Sans } from 'next/font/google';
+
+const cinzel = Cinzel({ subsets: ['latin'], variable: '--font-cinzel' });
+const notoSans = Noto_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-noto' });
+
 export const metadata: Metadata = {
   title: 'AIESEC Network & Bond',
   description: 'Real-time event networking for AIESEC.',
@@ -15,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col font-sans bg-slate-950 text-white">
+      <body className={`min-h-screen flex flex-col ${notoSans.className} ${cinzel.variable} bg-slate-950 text-white`}>
         <AnimatedBackground />
         
         {/* Header */}

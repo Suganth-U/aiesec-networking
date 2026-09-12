@@ -82,119 +82,26 @@ export function AirSymbol({ className = '', size = 60 }: { className?: string; s
 
 // ── Floating 3D Character ──
 export function AvatarCharacter({ element, className = '' }: { element: 'water' | 'earth' | 'fire' | 'air'; className?: string }) {
-  const colors = {
-    water: { primary: '#3B82F6', secondary: '#93C5FD', glow: '#BFDBFE' },
-    earth: { primary: '#22C55E', secondary: '#86EFAC', glow: '#BBF7D0' },
-    fire: { primary: '#EF4444', secondary: '#FCA5A5', glow: '#FEE2E2' },
-    air: { primary: '#F97316', secondary: '#FDBA74', glow: '#FED7AA' },
+  const characters = {
+    water: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Katara.png',
+    earth: 'https://upload.wikimedia.org/wikipedia/en/4/46/Toph_Beifong.png',
+    fire: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Zuko.png',
+    air: 'https://upload.wikimedia.org/wikipedia/en/8/86/Avatar_Aang.png',
   };
-
-  const c = colors[element];
 
   return (
     <motion.div
-      className={`relative ${className}`}
+      className={`relative flex items-center justify-center ${className}`}
       animate={{
         y: [-8, 8, -8],
-        rotateY: [0, 15, -15, 0],
       }}
       transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ perspective: '800px', transformStyle: 'preserve-3d' }}
     >
-      {/* Glow ring */}
-      <motion.div
-        className="absolute inset-0 rounded-full blur-xl"
-        style={{ backgroundColor: c.glow, opacity: 0.4 }}
-        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+      <img 
+        src={characters[element]} 
+        alt={`${element} bender`} 
+        className="h-48 object-contain drop-shadow-2xl"
       />
-
-      {/* Body */}
-      <svg width="120" height="160" viewBox="0 0 120 160" className="relative z-10">
-        {/* Head */}
-        <motion.circle
-          cx="60" cy="40" r="22"
-          fill={c.primary}
-          animate={{ cy: [40, 38, 40] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {/* Eyes */}
-        <motion.circle cx="52" cy="37" r="3" fill="white"
-          animate={{ r: [3, 2, 3] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.circle cx="68" cy="37" r="3" fill="white"
-          animate={{ r: [3, 2, 3] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <circle cx="52" cy="37" r="1.5" fill={c.secondary} />
-        <circle cx="68" cy="37" r="1.5" fill={c.secondary} />
-
-        {/* Arrow on head (for air) */}
-        {element === 'air' && (
-          <path d="M60 18 L55 30 L60 27 L65 30 Z" fill={c.glow} />
-        )}
-
-        {/* Body */}
-        <motion.path
-          d="M40 62 Q40 55 50 52 L60 50 L70 52 Q80 55 80 62 L85 120 Q85 130 75 130 L45 130 Q35 130 35 120 Z"
-          fill={c.primary}
-          opacity="0.9"
-          animate={{ d: [
-            "M40 62 Q40 55 50 52 L60 50 L70 52 Q80 55 80 62 L85 120 Q85 130 75 130 L45 130 Q35 130 35 120 Z",
-            "M38 62 Q38 55 50 52 L60 50 L70 52 Q82 55 82 62 L87 120 Q87 130 75 130 L45 130 Q33 130 33 120 Z",
-            "M40 62 Q40 55 50 52 L60 50 L70 52 Q80 55 80 62 L85 120 Q85 130 75 130 L45 130 Q35 130 35 120 Z",
-          ]}}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Belt */}
-        <rect x="38" y="85" width="44" height="6" rx="3" fill={c.secondary} opacity="0.7" />
-
-        {/* Arms */}
-        <motion.path
-          d="M40 65 L20 90 L25 92"
-          stroke={c.primary} strokeWidth="8" strokeLinecap="round" fill="none"
-          animate={{ d: [
-            "M40 65 L20 90 L25 92",
-            "M40 65 L15 80 L20 78",
-            "M40 65 L20 90 L25 92",
-          ]}}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.path
-          d="M80 65 L100 90 L95 92"
-          stroke={c.primary} strokeWidth="8" strokeLinecap="round" fill="none"
-          animate={{ d: [
-            "M80 65 L100 90 L95 92",
-            "M80 65 L105 80 L100 78",
-            "M80 65 L100 90 L95 92",
-          ]}}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
-        />
-
-        {/* Element orbs around hands */}
-        <motion.circle
-          cx="22" cy="90" r="8"
-          fill={c.glow} opacity="0.6"
-          animate={{ r: [6, 10, 6], opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.circle
-          cx="98" cy="90" r="8"
-          fill={c.glow} opacity="0.6"
-          animate={{ r: [6, 10, 6], opacity: [0.4, 0.7, 0.4] }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-        />
-
-        {/* Legs */}
-        <rect x="42" y="125" width="12" height="25" rx="5" fill={c.primary} opacity="0.85" />
-        <rect x="66" y="125" width="12" height="25" rx="5" fill={c.primary} opacity="0.85" />
-
-        {/* Shoes */}
-        <ellipse cx="48" cy="152" rx="10" ry="5" fill={c.secondary} opacity="0.6" />
-        <ellipse cx="72" cy="152" rx="10" ry="5" fill={c.secondary} opacity="0.6" />
-      </svg>
     </motion.div>
   );
 }

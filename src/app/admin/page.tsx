@@ -169,16 +169,16 @@ export default function AdminPage() {
   const nextRound = async () => {
     if (!session) return;
     const nextRnd = Math.min(session.currentRound + 1, 3);
-    await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'active' });
+    await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'waiting' });
     users.forEach((u) => {
       updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
     });
   };
 
   const prevRound = async () => {
-    if (!session) return;
+    if (!session || session.currentRound === 0) return;
     const prevRnd = Math.max(session.currentRound - 1, 0);
-    await updateSession({ currentRound: prevRnd, timeRemaining: 300, status: 'active' });
+    await updateSession({ currentRound: prevRnd, timeRemaining: 300, status: 'waiting' });
     users.forEach((u) => {
       updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
     });
@@ -208,13 +208,13 @@ export default function AdminPage() {
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        // Instantly reset session to waiting so it doesn't auto-start or keep ticking
+        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
+        
         // Delete all user documents
         for (const u of users) {
           await deleteDoc(doc(db, 'users', u.id));
         }
-        
-        // Reset session back to waiting
-        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
       }
     });
   };

@@ -249,22 +249,22 @@ export default function NetworkPage() {
           <ElementParticles element={targetElement} count={6} />
 
           <div className="p-6 sm:p-8 flex-1 flex flex-col items-center justify-center text-center relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Search className="w-4 h-4 text-white/40" />
-              <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">Find Your Match</span>
-            </div>
-
             {/* Target bender character */}
-            <AvatarCharacter element={targetElement} className="scale-[0.5] mb-0 -mt-4" />
+            <AvatarCharacter element={targetElement} className="scale-[0.5] mb-0 -mt-10" />
 
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight -mt-4">
-              {targetNation}
-            </h2>
-            <p className="text-sm text-white/50 mb-4">{targetGroup?.name.split(' - ')[1]}</p>
+            <div className="w-full flex flex-col gap-6 -mt-2 mb-8 items-center">
+              {/* You Are */}
+              <div className="bg-white rounded-3xl px-6 py-4 shadow-2xl text-center w-full max-w-sm">
+                <h3 className="text-2xl sm:text-3xl font-black text-black leading-tight mb-1">You are</h3>
+                <p className="text-3xl sm:text-4xl font-black text-black leading-tight">{myNation} - {myGroup?.name.split(' - ')[1]}</p>
+              </div>
 
-
-
-            {/* Icebreaker */}
+              {/* Find Match */}
+              <div className="bg-white rounded-3xl px-6 py-4 shadow-2xl text-center w-full max-w-sm">
+                <h3 className="text-2xl sm:text-3xl font-black text-black leading-tight mb-1">Find your match</h3>
+                <p className="text-3xl sm:text-4xl font-black text-black leading-tight">{targetNation} {targetGroup?.name.split(' - ')[1]}</p>
+              </div>
+            </div>            {/* Icebreaker */}
             <div className="w-full space-y-3 mt-auto">
               <button onClick={spinIcebreaker} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-sm font-medium text-white/70 transition-all active:scale-[0.98]">
                 <Sparkles className="w-4 h-4 text-amber-400" /> Get a Conversation Starter

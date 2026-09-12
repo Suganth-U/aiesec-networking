@@ -129,7 +129,7 @@ export default function NetworkPage() {
   const myElement = FO_TO_ELEMENT[myFO] || 'water';
   const myNation = FO_TO_NATION[myFO] || 'Water Tribe';
 
-  const targetGroupId = session.currentRound < 4 ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
+  const targetGroupId = session.currentRound < 3 ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
   const targetGroup = targetGroupId ? getGroupById(targetGroupId) : null;
   const targetColors = targetGroup ? getGroupColor(targetGroup.color) : null;
   const targetFO = targetGroup?.name.split(' - ')[0] || 'iGT';
@@ -223,7 +223,7 @@ export default function NetworkPage() {
         <div className={`flex items-center justify-between px-4 py-3 rounded-xl border mb-4 ${isUrgent ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isUrgent ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-            <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of 4</span>
+            <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of 3</span>
           </div>
           <div className={`text-2xl font-bold font-mono tracking-tight ${isUrgent ? 'text-red-400' : 'text-white'}`}>
             {minutes}:{seconds.toString().padStart(2, '0')}

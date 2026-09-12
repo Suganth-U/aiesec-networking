@@ -92,29 +92,8 @@ export default function JoinPage() {
   const colors = getGroupColor(color);
   const progressWidth = `${((step + 1) / 4) * 100}%`;
 
-  const backgrounds = {
-    water: 'https://images.unsplash.com/photo-1518182170546-076616fdcd81?q=80&w=1080',
-    earth: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1080',
-    fire: 'https://images.unsplash.com/photo-1497910091122-9f8a7746eb33?q=80&w=1080',
-    air: 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?q=80&w=1080'
-  };
-
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden relative">
-      {/* Dynamic Realistic Background */}
-      <AnimatePresence>
-        {nation && (
-          <motion.div
-            key={nation.element}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="absolute inset-0 z-0 bg-cover bg-center pointer-events-none mix-blend-screen"
-            style={{ backgroundImage: `url(${backgrounds[nation.element]})` }}
-          />
-        )}
-      </AnimatePresence>
 
       <div className="z-10 w-full max-w-md mb-8">
       {/* Progress Bar */}

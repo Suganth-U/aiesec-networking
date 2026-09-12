@@ -11,23 +11,17 @@ export const GROUPS: Group[] = [
   { id: 8, name: "oGV - Member", color: "White" },
 ];
 
-// 7-round deterministic round-robin tournament for 8 teams.
-// Ensures no two teams meet twice, and everyone meets exactly one group per round.
+// 3-round bipartite matching for 8 teams (4 LBs, 4 Members).
+// Rules:
+// 1. LB (1,3,5,7) must ONLY match with Member (2,4,6,8).
+// 2. Cannot match same Front Office.
 export const MATCHMAKING_MATRIX = [
-  // Round 1
-  [[1, 8], [2, 7], [3, 6], [4, 5]],
-  // Round 2
-  [[1, 7], [8, 6], [2, 5], [3, 4]],
-  // Round 3
-  [[1, 6], [7, 5], [8, 4], [2, 3]],
-  // Round 4
-  [[1, 5], [6, 4], [7, 3], [8, 2]],
-  // Round 5
-  [[1, 4], [5, 3], [6, 2], [7, 8]],
-  // Round 6
-  [[1, 3], [4, 2], [5, 8], [6, 7]],
-  // Round 7
-  [[1, 2], [3, 8], [4, 7], [5, 6]],
+  // Round 1: Shift 1 (1->4, 3->6, 5->8, 7->2)
+  [[1, 4], [3, 6], [5, 8], [7, 2]],
+  // Round 2: Shift 2 (1->6, 3->8, 5->2, 7->4)
+  [[1, 6], [3, 8], [5, 2], [7, 4]],
+  // Round 3: Shift 3 (1->8, 3->2, 5->4, 7->6)
+  [[1, 8], [3, 2], [5, 4], [7, 6]],
 ];
 
 /**

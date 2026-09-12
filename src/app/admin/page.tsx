@@ -157,7 +157,7 @@ export default function AdminPage() {
 
   const nextRound = async () => {
     if (!session) return;
-    const nextRnd = Math.min(session.currentRound + 1, 3);
+    const nextRnd = Math.min(session.currentRound + 1, 2);
     await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'active' });
     users.forEach((u) => {
       updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
@@ -463,7 +463,7 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Current Round</p>
-                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 4</span></p>
+                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 3</span></p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={resetSession} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-all active:scale-[0.98]">
@@ -477,7 +477,7 @@ export default function AdminPage() {
                     <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button onClick={nextRound} disabled={session.currentRound >= 3} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                    <button onClick={nextRound} disabled={session.currentRound >= 2} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
                       Next <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

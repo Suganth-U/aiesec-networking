@@ -159,7 +159,7 @@ export default function NetworkPage() {
               <p className="text-xs text-white/40 uppercase tracking-wider font-semibold mb-2">You are</p>
               <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-bold ${myColors.badge}`}>
                 <div className={`w-3.5 h-3.5 rounded-full ${myColors.dot}`} />
-                {myNation} · {myGroup?.name}
+                {myNation} · {myGroup?.name.split(' - ')[1]}
               </div>
             </div>
             <p className="text-xs text-white/30">Welcome, {user.name}</p>
@@ -217,7 +217,7 @@ export default function NetworkPage() {
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 mb-3">
           <div className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${myColors.dot}`} />
-            <span className="text-xs font-semibold text-white/50">{myNation} · <span className="text-white">{myGroup?.name}</span></span>
+            <span className="text-xs font-semibold text-white/50">{myNation} · <span className="text-white">{myGroup?.name.split(' - ')[1]}</span></span>
           </div>
           <span className="text-xs text-white/30">{user.name}</span>
         </div>
@@ -311,7 +311,7 @@ export default function NetworkPage() {
             {isFinishing ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <><CheckCircle2 className="w-5 h-5" /> Done! Ready for Next Round</>
+              <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === 3 ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
             )}
           </button>
         </div>

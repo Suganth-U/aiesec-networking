@@ -184,24 +184,39 @@ export default function AdminPage() {
     });
   };
 
-  const resetSession = async () => {
-    if (!confirm('Are you sure you want to reset the entire session? This will restart the event to Round 1.')) return;
-    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
-    users.forEach((u) => {
-      updateDoc(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] });
+  const resetSession = () => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Reset Session',
+      message: 'Are you sure you want to reset the entire session? This will restart the event to Round 1.',
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
+        users.forEach((u) => {
+          updateDoc(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] });
+        });
+      }
     });
   };
 
-  const clearAllParticipants = async () => {
-    if (!confirm('🚨 WARNING: This will permanently delete ALL registered participants. Use this ONLY when starting a brand new game/event. Are you sure?')) return;
-    
-    // Delete all user documents
-    for (const u of users) {
-      await deleteDoc(doc(db, 'users', u.id));
-    }
-    
-    // Reset session back to waiting
-    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
+  const clearAllParticipants = () => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Clear All Participants',
+      message: '🚨 WARNING: This will permanently delete ALL registered participants. Use this ONLY when starting a brand new game/event. Are you sure?',
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        // Delete all user documents
+        for (const u of users) {
+          await deleteDoc(doc(db, 'users', u.id));
+        }
+        
+        // Reset session back to waiting
+        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
+      }
+    });
   };
 
   const startSession = async () => {
@@ -214,17 +229,35 @@ export default function AdminPage() {
     setNewQuestion('');
   };
 
-  const removeQuestion = async (index: number) => {
-    if (!session) return;
-    await updateSession({ questions: session.questions.filter((_, i) => i !== index) });
+  const removeQuestion = (index: number) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Delete Question',
+      message: 'Are you sure you want to delete this discussion prompt?',
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        if (!session) return;
+        await updateSession({ questions: session.questions.filter((_, i) => i !== index) });
+      }
+    });
   };
 
-  const saveEditQuestion = async (index: number) => {
-    if (!session || !editValue.trim()) return;
-    const newQuestions = [...session.questions];
-    newQuestions[index] = editValue.trim();
-    await updateSession({ questions: newQuestions });
-    setEditingIndex(null);
+  const saveEditQuestion = (index: number) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Save Changes',
+      message: 'Are you sure you want to save the edits to this discussion prompt?',
+      isDangerous: false,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        if (!session || !editValue.trim()) return;
+        const newQuestions = [...session.questions];
+        newQuestions[index] = editValue.trim();
+        await updateSession({ questions: newQuestions });
+        setEditingIndex(null);
+      }
+    });
   };
 
   // ══════════════════════════════════════

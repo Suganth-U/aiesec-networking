@@ -272,18 +272,26 @@ export default function NetworkPage() {
               </button>
               <AnimatePresence>
                 {icebreakers.length > 0 && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden space-y-2 mt-3">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden space-y-3 mt-4">
                     {icebreakers.map((q, idx) => (
-                      <div key={idx} className="flex items-start gap-3 bg-white/5 border border-white/10 rounded-xl p-3 text-left">
-                        <button 
-                          onClick={() => setCheckedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                          className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ${checkedQuestions[idx] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 text-transparent'}`}
+                      <div 
+                        key={idx} 
+                        onClick={() => setCheckedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                        className={`flex items-center justify-between gap-4 bg-black/40 backdrop-blur-md border rounded-xl p-4 text-left cursor-pointer transition-all active:scale-[0.98] ${checkedQuestions[idx] ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-white/10 hover:bg-white/5'}`}
+                      >
+                        <div className="flex gap-3 items-start flex-1">
+                          <span className={`font-avatar tracking-widest text-lg mt-0.5 ${checkedQuestions[idx] ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {idx + 1}.
+                          </span>
+                          <p className={`text-sm md:text-base font-medium leading-relaxed transition-colors ${checkedQuestions[idx] ? 'text-white/40 line-through' : 'text-white/90'}`}>
+                            {q}
+                          </p>
+                        </div>
+                        <div 
+                          className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center border-2 transition-all ${checkedQuestions[idx] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 text-transparent bg-black/20'}`}
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                        </button>
-                        <p className={`text-sm font-medium transition-colors ${checkedQuestions[idx] ? 'text-white/40 line-through' : 'text-white/90'}`}>
-                          {q}
-                        </p>
+                          <CheckCircle2 className="w-4 h-4" strokeWidth={3} />
+                        </div>
                       </div>
                     ))}
                   </motion.div>
@@ -303,7 +311,7 @@ export default function NetworkPage() {
             {isFinishing ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <><CheckCircle2 className="w-5 h-5" /> ✅ Finished</>
+              <><CheckCircle2 className="w-5 h-5" /> Done! Ready for Next Round</>
             )}
           </button>
         </div>

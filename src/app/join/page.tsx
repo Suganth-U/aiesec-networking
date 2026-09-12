@@ -26,7 +26,7 @@ const NATIONS: { value: FrontOffice; nation: string; element: 'water' | 'earth' 
 ];
 
 const ROLES: { value: Role; label: string; desc: string }[] = [
-  { value: 'LB', label: 'Leadership Body', desc: 'VP, Director, Manager' },
+  { value: 'LB', label: 'Leadership Body', desc: 'Specialist, Manager, Team leader' },
   { value: 'Member', label: 'Member', desc: 'Team Member' },
 ];
 
@@ -91,16 +91,39 @@ export default function JoinPage() {
   const colors = getGroupColor(color);
   const progressWidth = `${((step + 1) / 4) * 100}%`;
 
+  const backgrounds = {
+    water: 'https://images.unsplash.com/photo-1518182170546-076616fdcd81?q=80&w=1080',
+    earth: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1080',
+    fire: 'https://images.unsplash.com/photo-1497910091122-9f8a7746eb33?q=80&w=1080',
+    air: 'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?q=80&w=1080'
+  };
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden relative">
+      {/* Dynamic Realistic Background */}
+      <AnimatePresence>
+        {nation && (
+          <motion.div
+            key={nation.element}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.4 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            className="absolute inset-0 z-0 bg-cover bg-center pointer-events-none mix-blend-screen"
+            style={{ backgroundImage: `url(${backgrounds[nation.element]})` }}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="z-10 w-full max-w-md mb-8">
       {/* Progress Bar */}
       {step < 4 && (
-        <div className="w-full max-w-md mb-8">
+        <>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider font-avatar">
               Step {Math.min(step + 1, 4)} of 4
             </span>
-            <span className="text-xs text-white/30">
+            <span className="text-xs text-white/30 font-avatar">
               {step === 0 && 'Your Name'}
               {step === 1 && 'Your Nation'}
               {step === 2 && 'Your Role'}
@@ -114,10 +137,11 @@ export default function JoinPage() {
               transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
             />
           </div>
-        </div>
+        </>
       )}
+      </div>
 
-      <div className="w-full max-w-md relative" style={{ minHeight: '420px' }}>
+      <div className="z-10 w-full max-w-md relative" style={{ minHeight: '420px' }}>
         <AnimatePresence mode="wait" custom={direction}>
 
           {/* ══════════ STEP 0: Name ══════════ */}
@@ -139,17 +163,17 @@ export default function JoinPage() {
                 >
                   <UserIcon className="w-8 h-8 text-white" />
                 </motion.div>
-                <h1 className="text-2xl font-bold text-white">What&apos;s your name?</h1>
+                <h1 className="text-3xl font-avatar tracking-wider text-white">What&apos;s your name?</h1>
                 <p className="text-sm text-white/50 mt-1">Every bender needs a name</p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-white/70">Full Name *</label>
+              <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex flex-col gap-6">
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm font-medium text-white/90 font-avatar">Full Name *</label>
                   <input
                     type="text" autoFocus required
                     placeholder="Enter your full name"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl h-11 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl h-12 px-4 text-lg font-avatar text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all [text-shadow:0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-md"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
@@ -158,7 +182,7 @@ export default function JoinPage() {
                 <button
                   onClick={goNext}
                   disabled={!fullName.trim()}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] mt-2 shadow-lg shadow-cyan-500/10"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-avatar text-lg tracking-widest rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] shadow-lg shadow-cyan-500/10"
                 >
                   Continue <ArrowRight className="w-4 h-4" />
                 </button>
@@ -177,7 +201,7 @@ export default function JoinPage() {
               className="w-full"
             >
               <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold text-white">Choose your nation</h1>
+                <h1 className="text-3xl font-avatar tracking-wider text-white">Choose your nation</h1>
                 <p className="text-sm text-white/50 mt-1">Hi {fullName.split(' ')[0]}! Which element calls to you?</p>
               </div>
 
@@ -199,8 +223,8 @@ export default function JoinPage() {
                     >
                       <SymbolComponent size={40} />
                       <div className="flex-1">
-                        <p className={`font-bold text-sm ${frontOffice === n.value ? n.text : 'text-white'}`}>
-                          {n.nation} <span className="text-white/40">({n.value})</span>
+                        <p className={`font-avatar text-lg ${frontOffice === n.value ? n.text : 'text-white'}`}>
+                          {n.nation} <span className="text-white/40 text-sm font-sans">({n.value})</span>
                         </p>
                         <p className="text-xs text-white/40">{n.desc}</p>
                       </div>
@@ -213,7 +237,7 @@ export default function JoinPage() {
                 <button onClick={goBack} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
-                <button onClick={goNext} disabled={!frontOffice} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.98] shadow-lg shadow-cyan-500/10">
+                <button onClick={goNext} disabled={!frontOffice} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-avatar tracking-widest rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.98] shadow-lg shadow-cyan-500/10">
                   Continue <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -231,7 +255,7 @@ export default function JoinPage() {
               className="w-full"
             >
               <div className="text-center mb-6">
-                <h1 className="text-2xl font-bold text-white">What&apos;s your role?</h1>
+                <h1 className="text-3xl font-avatar tracking-wider text-white">What&apos;s your role?</h1>
                 <p className="text-sm text-white/50 mt-1">Master or apprentice of {nation?.nation}?</p>
               </div>
 
@@ -250,7 +274,7 @@ export default function JoinPage() {
                       }`}
                   >
                     <div>
-                      <p className={`font-bold ${role === r.value ? nation?.text : 'text-white'}`}>{r.label}</p>
+                      <p className={`font-avatar text-lg ${role === r.value ? nation?.text : 'text-white'}`}>{r.label}</p>
                       <p className="text-sm text-white/40">{r.desc}</p>
                     </div>
                   </motion.button>
@@ -261,7 +285,7 @@ export default function JoinPage() {
                 <button onClick={goBack} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
-                <button onClick={goNext} disabled={!role} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.98] shadow-lg shadow-cyan-500/10">
+                <button onClick={goNext} disabled={!role} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-avatar tracking-widest rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.98] shadow-lg shadow-cyan-500/10">
                   Reveal My Element <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -287,14 +311,14 @@ export default function JoinPage() {
                   transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
                   className="inline-block mb-4"
                 >
-                  <AvatarCharacter element={nation.element} className="scale-[0.6] mx-auto" />
+                  <AvatarCharacter element={nation.element} className="scale-100 mx-auto" />
                 </motion.div>
 
                 <motion.h1
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
-                  className={`text-3xl font-black ${nation.text}`}
+                  className={`text-4xl font-avatar tracking-widest ${nation.text}`}
                 >
                   {nation.nation}!
                 </motion.h1>
@@ -319,7 +343,7 @@ export default function JoinPage() {
                     <span className="text-lg font-black text-white">{frontOffice}</span>
                   </div>
                   <div>
-                    <p className="font-bold text-white">{fullName}</p>
+                    <p className="font-bold font-avatar tracking-wider text-white">{fullName}</p>
                     <p className="text-sm text-white/50">{getGroupName()}</p>
                   </div>
                 </div>
@@ -337,7 +361,7 @@ export default function JoinPage() {
                 <button onClick={goBack} className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-xl h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
-                <button onClick={handleJoin} disabled={loading} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-cyan-500/20">
+                <button onClick={handleJoin} disabled={loading} className="flex-[2] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-avatar tracking-widest rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-cyan-500/20">
                   <PartyPopper className="w-5 h-5" /> Enter the Arena
                 </button>
               </motion.div>
@@ -353,8 +377,8 @@ export default function JoinPage() {
               className="w-full flex flex-col items-center justify-center text-center py-16"
             >
               <ElementParticles element={nation.element} count={12} />
-              <AvatarCharacter element={nation.element} className="scale-[0.6] mb-4" />
-              <h2 className={`text-xl font-bold ${nation.text} mb-2`}>Entering the Arena...</h2>
+              <AvatarCharacter element={nation.element} className="scale-100 mb-4" />
+              <h2 className={`text-2xl font-avatar tracking-widest ${nation.text} mb-2`}>Entering the Arena...</h2>
               <p className="text-sm text-white/50">The elements are aligning, {fullName.split(' ')[0]}!</p>
             </motion.div>
           )}
@@ -363,7 +387,7 @@ export default function JoinPage() {
       </div>
 
       {step < 4 && (
-        <p className="text-center text-xs text-white/20 mt-6">No account needed · Anonymous & instant</p>
+        <p className="z-10 text-center text-xs text-white/20 mt-6 font-avatar">No account needed · Anonymous & instant</p>
       )}
     </div>
   );

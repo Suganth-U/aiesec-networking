@@ -83,10 +83,10 @@ export function AirSymbol({ className = '', size = 60 }: { className?: string; s
 // ── Floating 3D Character ──
 export function AvatarCharacter({ element, className = '' }: { element: 'water' | 'earth' | 'fire' | 'air'; className?: string }) {
   const characters = {
-    water: 'https://upload.wikimedia.org/wikipedia/en/f/f6/Katara.png',
-    earth: 'https://upload.wikimedia.org/wikipedia/en/4/46/Toph_Beifong.png',
-    fire: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Zuko.png',
-    air: 'https://upload.wikimedia.org/wikipedia/en/8/86/Avatar_Aang.png',
+    water: '/katara.png',
+    earth: '/Toph.png',
+    fire: '/zuko.png',
+    air: '/Aang.png',
   };
 
   return (
@@ -100,7 +100,7 @@ export function AvatarCharacter({ element, className = '' }: { element: 'water' 
       <img 
         src={characters[element]} 
         alt={`${element} bender`} 
-        className="h-48 object-contain drop-shadow-2xl"
+        className="h-48 object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.7)]"
       />
     </motion.div>
   );

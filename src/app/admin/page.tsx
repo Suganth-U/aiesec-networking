@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc } from 'firebase/firestore';
 import { Session, User } from '@/types';
-import { Play, Pause, Plus, Minus, ArrowRight, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut } from 'lucide-react';
+import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut } from 'lucide-react';
 import { GROUPS } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 
@@ -157,14 +157,40 @@ export default function AdminPage() {
 
   const nextRound = async () => {
     if (!session) return;
-    const nextRnd = Math.min(session.currentRound + 1, 6);
+    const nextRnd = Math.min(session.currentRound + 1, 3);
     await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'active' });
-    setIsPaused(false);
-    users.forEach(async (u) => {
-      if (u.status === 'finished_round') {
-        await updateDoc(doc(db, 'users', u.id), { status: 'networking' });
-      }
+    users.forEach((u) => {
+      updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
     });
+  };
+
+  const prevRound = async () => {
+    if (!session) return;
+    const prevRnd = Math.max(session.currentRound - 1, 0);
+    await updateSession({ currentRound: prevRnd, timeRemaining: 300, status: 'active' });
+    users.forEach((u) => {
+      updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
+    });
+  };
+
+  const resetSession = async () => {
+    if (!confirm('Are you sure you want to reset the entire session? This will restart the event to Round 1.')) return;
+    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting' });
+    users.forEach((u) => {
+      updateDoc(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] });
+    });
+  };
+
+  const clearAllParticipants = async () => {
+    if (!confirm('🚨 WARNING: This will permanently delete ALL registered participants. Use this ONLY when starting a brand new game/event. Are you sure?')) return;
+    
+    // Delete all user documents
+    for (const u of users) {
+      await deleteDoc(doc(db, 'users', u.id));
+    }
+    
+    // Reset session back to waiting
+    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting' });
   };
 
   const startSession = async () => {
@@ -188,7 +214,7 @@ export default function AdminPage() {
   // ══════════════════════════════════════
   if (!isAuthenticated) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-white/5 backdrop-blur-md">
+      <div className="flex-1 flex items-center justify-center p-4 bg-white text-zinc-900">
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-900 flex items-center justify-center mb-4">
@@ -320,7 +346,7 @@ export default function AdminPage() {
   // Loading
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center bg-white text-zinc-900">
         <div className="w-6 h-6 rounded-full border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
       </div>
     );
@@ -341,7 +367,7 @@ export default function AdminPage() {
   // ADMIN DASHBOARD
   // ══════════════════════════════════════
   return (
-    <div className="flex-1 bg-transparent p-4 sm:p-8">
+    <div className="flex-1 bg-white text-zinc-900 p-4 sm:p-8">
       {changePasswordModal}
 
       <div className="max-w-6xl mx-auto">
@@ -435,19 +461,25 @@ export default function AdminPage() {
                 </div>
 
                 {/* Round & Action */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Current Round</p>
-                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 7</span></p>
+                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 4</span></p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={resetSession} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-all active:scale-[0.98]">
+                      Reset
+                    </button>
                     {session.status === 'waiting' && (
-                      <button onClick={startSession} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
-                        <Zap className="w-4 h-4" /> Start Session
+                      <button onClick={startSession} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
+                        <Zap className="w-4 h-4" /> Start
                       </button>
                     )}
-                    <button onClick={nextRound} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
-                      Next Round <ArrowRight className="w-4 h-4" />
+                    <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
+                      <ArrowLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <button onClick={nextRound} disabled={session.currentRound >= 3} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                      Next <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -505,7 +537,16 @@ export default function AdminPage() {
                   <Users className="w-4 h-4 text-zinc-400" />
                   <h2 className="text-sm font-semibold text-zinc-900">Attendance</h2>
                 </div>
-                <span className="text-2xl font-bold text-zinc-900">{users.length}</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={clearAllParticipants}
+                    className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all active:scale-95"
+                    title="Delete all users and start a fresh game"
+                  >
+                    Clear All
+                  </button>
+                  <span className="text-2xl font-bold text-zinc-900">{users.length}</span>
+                </div>
               </div>
 
               <div className="space-y-2.5">

@@ -27,6 +27,7 @@
   --color-ring: #09090b;
   
   --font-avatar: var(--font-cinzel), serif;
+  --font-game: var(--font-game), monospace;
 }
 
 @layer base {

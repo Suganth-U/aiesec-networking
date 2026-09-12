@@ -30,7 +30,6 @@ export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [newQuestion, setNewQuestion] = useState('');
-  const [isPaused, setIsPaused] = useState(false);
 
   // ── Load/Initialize admin password from Firestore ──
   useEffect(() => {
@@ -124,6 +123,7 @@ export default function AdminPage() {
           status: 'waiting',
           currentRound: 0,
           timeRemaining: 300,
+          isPaused: false,
           questions: [
             'Why did you join AIESEC?',
             "What's something people don't know about you?",
@@ -142,14 +142,14 @@ export default function AdminPage() {
 
   // Timer Tick
   useEffect(() => {
-    if (!session || session.status !== 'active' || session.timeRemaining <= 0 || isPaused) return;
+    if (!session || session.status !== 'active' || session.timeRemaining <= 0 || session.isPaused) return;
     const timer = setInterval(() => {
       updateDoc(doc(db, 'sessions', 'main-event'), {
         timeRemaining: session.timeRemaining - 1
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [session, isPaused]);
+  }, [session]);
 
   const updateSession = async (updates: Partial<Session>) => {
     await updateDoc(doc(db, 'sessions', 'main-event'), updates);
@@ -175,7 +175,7 @@ export default function AdminPage() {
 
   const resetSession = async () => {
     if (!confirm('Are you sure you want to reset the entire session? This will restart the event to Round 1.')) return;
-    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting' });
+    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
     users.forEach((u) => {
       updateDoc(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] });
     });
@@ -190,12 +190,11 @@ export default function AdminPage() {
     }
     
     // Reset session back to waiting
-    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting' });
+    await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
   };
 
   const startSession = async () => {
-    await updateSession({ status: 'active', currentRound: 0, timeRemaining: 300 });
-    setIsPaused(false);
+    await updateSession({ status: 'active', currentRound: 0, timeRemaining: 300, isPaused: false });
   };
 
   const addQuestion = async () => {
@@ -451,11 +450,11 @@ export default function AdminPage() {
                       <Minus className="w-3.5 h-3.5" /> 30s
                     </button>
                     <button
-                      onClick={() => setIsPaused(!isPaused)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${isPaused ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-white/5 backdrop-blur-md'}`}
+                      onClick={() => updateSession({ isPaused: !session.isPaused })}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${session.isPaused ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-white/5 backdrop-blur-md'}`}
                     >
-                      {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
-                      {isPaused ? 'Play' : 'Pause'}
+                      {session.isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
+                      {session.isPaused ? 'Play' : 'Pause'}
                     </button>
                   </div>
                 </div>

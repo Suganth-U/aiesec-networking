@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, ArrowLeft, User as UserIcon, PartyPopper } from 'lucide-react';
+import { ArrowRight, ArrowLeft, User as UserIcon, PartyPopper, AlertTriangle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { signInAnonymously } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -39,6 +39,7 @@ export default function JoinPage() {
   const [fullName, setFullName] = useState('');
   const [frontOffice, setFrontOffice] = useState<FrontOffice | null>(null);
   const [role, setRole] = useState<Role | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const goNext = () => { setDirection(1); setStep(s => s + 1); };
   const goBack = () => { setDirection(-1); setStep(s => s - 1); };
@@ -79,7 +80,7 @@ export default function JoinPage() {
       setTimeout(() => router.push('/network'), 1500);
     } catch (error) {
       console.error('Error joining:', error);
-      alert('Failed to join. Please try again.');
+      setErrorMsg('Failed to join. Please try again.');
       setLoading(false);
       setDirection(-1);
       setStep(3);
@@ -169,10 +170,10 @@ export default function JoinPage() {
 
               <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex flex-col gap-6">
                 <div className="flex flex-col gap-3">
-                  <label className="text-sm font-medium text-white/90 font-avatar">Full Name *</label>
+                  <label className="text-sm font-medium text-white/90 font-avatar">Name *</label>
                   <input
                     type="text" autoFocus required
-                    placeholder="Enter your full name"
+                    placeholder="Enter your name"
                     className="w-full bg-white/5 border border-white/10 rounded-xl h-12 px-4 text-lg font-avatar text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-transparent transition-all [text-shadow:0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-md"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -389,6 +390,37 @@ export default function JoinPage() {
       {step < 4 && (
         <p className="z-10 text-center text-xs text-white/20 mt-6 font-avatar">No account needed · Anonymous & instant</p>
       )}
+
+      {/* Error Modal Overlay */}
+      <AnimatePresence>
+        {errorMsg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-sm bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl flex flex-col items-center text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mb-4 border border-red-500/50 shadow-lg shadow-red-500/20">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+              </div>
+              <h2 className="text-xl font-avatar font-bold text-white mb-2 tracking-wider">Join Error</h2>
+              <p className="text-sm text-white/70 mb-6">{errorMsg}</p>
+              <button
+                onClick={() => setErrorMsg('')}
+                className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-avatar tracking-widest rounded-xl h-11 flex items-center justify-center transition-all active:scale-[0.98]"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

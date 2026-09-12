@@ -18,6 +18,7 @@ export interface Session {
   currentRound: number; // 0-7
   timeRemaining: number; // seconds
   questions: string[]; // Discussion prompts for the current round
+  isPaused?: boolean;
 }
 
 export type Group = {

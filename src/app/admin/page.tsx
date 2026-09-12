@@ -188,7 +188,7 @@ export default function AdminPage() {
   // ══════════════════════════════════════
   if (!isAuthenticated) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-zinc-50">
+      <div className="flex-1 flex items-center justify-center p-4 bg-white/5 backdrop-blur-md">
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-900 flex items-center justify-center mb-4">
@@ -360,7 +360,7 @@ export default function AdminPage() {
             <div className="h-5 w-px bg-zinc-200" />
             <button
               onClick={() => setShowChangePassword(true)}
-              className="p-2 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 transition-all"
+              className="p-2 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-700 hover:bg-white/5 backdrop-blur-md transition-all"
               title="Change Password"
             >
               <KeyRound className="w-4 h-4" />
@@ -404,7 +404,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Timer Display */}
-                <div className="flex items-center gap-6 p-5 bg-zinc-50 rounded-xl border border-zinc-100 mb-6">
+                <div className="flex items-center gap-6 p-5 bg-white/5 backdrop-blur-md rounded-xl border border-zinc-100 mb-6">
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Time Remaining</p>
                     <span className="text-5xl font-bold font-mono text-zinc-900 tracking-tight">
@@ -414,19 +414,19 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => updateSession({ timeRemaining: session.timeRemaining + 30 })}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-all active:scale-95"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-white/5 backdrop-blur-md transition-all active:scale-95"
                     >
                       <Plus className="w-3.5 h-3.5" /> 30s
                     </button>
                     <button
                       onClick={() => updateSession({ timeRemaining: Math.max(0, session.timeRemaining - 30) })}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-all active:scale-95"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-white/5 backdrop-blur-md transition-all active:scale-95"
                     >
                       <Minus className="w-3.5 h-3.5" /> 30s
                     </button>
                     <button
                       onClick={() => setIsPaused(!isPaused)}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${isPaused ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'}`}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all active:scale-95 ${isPaused ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-white/5 backdrop-blur-md'}`}
                     >
                       {isPaused ? <Play className="w-3.5 h-3.5" /> : <Pause className="w-3.5 h-3.5" />}
                       {isPaused ? 'Play' : 'Pause'}
@@ -468,7 +468,7 @@ export default function AdminPage() {
                   onChange={(e) => setNewQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addQuestion()}
                   placeholder="Type a new icebreaker question..."
-                  className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
+                  className="flex-1 bg-white/5 backdrop-blur-md border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
                 />
                 <button
                   onClick={addQuestion}
@@ -481,7 +481,7 @@ export default function AdminPage() {
 
               <ul className="space-y-2">
                 {session.questions.map((q, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100 group">
+                  <li key={i} className="flex items-center justify-between gap-3 p-3 bg-white/5 backdrop-blur-md rounded-xl border border-zinc-100 group">
                     <span className="text-sm text-zinc-700">{q}</span>
                     <button
                       onClick={() => removeQuestion(i)}
@@ -512,7 +512,7 @@ export default function AdminPage() {
                 {usersByGroup.map((g) => {
                   const colors = getGroupColor(g.color);
                   return (
-                    <div key={g.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-zinc-50 border border-zinc-100">
+                    <div key={g.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-zinc-100">
                       <div className="flex items-center gap-2.5">
                         <div className={`w-3 h-3 rounded-full ${colors.dot}`} />
                         <span className="text-xs font-semibold text-zinc-700">{g.name}</span>

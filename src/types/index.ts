@@ -10,7 +10,6 @@ export interface User {
   role: Role;
   color: string; // Mapped from role/office
   status: UserStatus;
-  email?: string; // Optional Email address
   metUsers: string[]; // Array of UIDs they successfully met
 }
 

@@ -4,72 +4,99 @@ import { motion } from 'framer-motion';
 
 export default function AnimatedBackground() {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-zinc-50">
-      {/* AIESEC Blue Blob */}
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+
+      {/* Water - Blue Blob */}
       <motion.div
         animate={{
-          x: [0, 100, -50, 0],
-          y: [0, -100, 50, 0],
-          scale: [1, 1.2, 0.8, 1],
+          x: [0, 80, -40, 0],
+          y: [0, -80, 40, 0],
+          scale: [1, 1.3, 0.8, 1],
         }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] max-w-[500px] max-h-[500px] bg-blue-400/30 rounded-full blur-[80px] mix-blend-multiply"
+        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-[5%] left-[5%] w-[45vw] h-[45vw] max-w-[500px] max-h-[500px] bg-blue-600/15 rounded-full blur-[100px]"
       />
 
-      {/* AIESEC Orange/Yellow Blob */}
+      {/* Fire - Red Blob */}
       <motion.div
         animate={{
-          x: [0, -80, 100, 0],
-          y: [0, 120, -60, 0],
-          scale: [1, 0.9, 1.3, 1],
+          x: [0, -60, 80, 0],
+          y: [0, 100, -50, 0],
+          scale: [1, 0.9, 1.2, 1],
         }}
-        transition={{
-          duration: 18,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 2,
-        }}
-        className="absolute top-[20%] right-[10%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-orange-400/30 rounded-full blur-[80px] mix-blend-multiply"
+        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        className="absolute top-[15%] right-[5%] w-[40vw] h-[40vw] max-w-[450px] max-h-[450px] bg-red-600/15 rounded-full blur-[100px]"
       />
 
-      {/* AIESEC Green Blob */}
+      {/* Earth - Green Blob */}
       <motion.div
         animate={{
-          x: [0, 120, -100, 0],
-          y: [0, -80, 100, 0],
+          x: [0, 100, -80, 0],
+          y: [0, -60, 80, 0],
           scale: [1, 1.4, 0.9, 1],
         }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 4,
-        }}
-        className="absolute bottom-[10%] left-[20%] w-[45vw] h-[45vw] max-w-[600px] max-h-[600px] bg-emerald-400/20 rounded-full blur-[80px] mix-blend-multiply"
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+        className="absolute bottom-[5%] left-[15%] w-[50vw] h-[50vw] max-w-[550px] max-h-[550px] bg-emerald-600/12 rounded-full blur-[100px]"
       />
 
-      {/* Purple/Pink Accent Blob */}
+      {/* Air - Orange Blob */}
       <motion.div
         animate={{
-          x: [0, -150, 50, 0],
-          y: [0, 50, -120, 0],
-          scale: [1, 1.1, 0.8, 1],
+          x: [0, -120, 40, 0],
+          y: [0, 40, -100, 0],
+          scale: [1, 1.1, 0.85, 1],
         }}
-        transition={{
-          duration: 22,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
-        className="absolute bottom-[20%] right-[20%] w-[30vw] h-[30vw] max-w-[400px] max-h-[400px] bg-purple-400/20 rounded-full blur-[80px] mix-blend-multiply"
+        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        className="absolute bottom-[20%] right-[15%] w-[35vw] h-[35vw] max-w-[400px] max-h-[400px] bg-orange-500/12 rounded-full blur-[100px]"
       />
-      
-      {/* Light noise overlay for texture */}
-      <div className="absolute inset-0 opacity-[0.015] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+
+      {/* Floating element particles */}
+      {['💧', '🔥', '🪨', '🌀', '💧', '🔥', '🪨', '🌀', '✨', '⚡'].map((emoji, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-lg opacity-20"
+          style={{
+            left: `${5 + (i * 9.5)}%`,
+            top: `${10 + ((i * 17) % 80)}%`,
+          }}
+          animate={{
+            y: [-30, 30, -30],
+            x: [-15, 15, -15],
+            rotate: [0, 180, 360],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{
+            duration: 5 + i * 0.7,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.8,
+          }}
+        >
+          {emoji}
+        </motion.div>
+      ))}
+
+      {/* Stars / sparkle dots */}
+      {Array.from({ length: 30 }).map((_, i) => (
+        <motion.div
+          key={`star-${i}`}
+          className="absolute w-1 h-1 rounded-full bg-white"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            opacity: [0, 0.6, 0],
+            scale: [0.5, 1.5, 0.5],
+          }}
+          transition={{
+            duration: 2 + Math.random() * 3,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: Math.random() * 5,
+          }}
+        />
+      ))}
     </div>
   );
 }

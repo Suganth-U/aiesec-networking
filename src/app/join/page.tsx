@@ -36,7 +36,6 @@ export default function JoinPage() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [videoSrc, setVideoSrc] = useState<string>('/bgVideo.mp4');
 
   const [fullName, setFullName] = useState('');
   const [frontOffice, setFrontOffice] = useState<FrontOffice | null>(null);
@@ -130,15 +129,17 @@ export default function JoinPage() {
 
   return (
     <div className="relative w-full h-[100dvh] flex flex-col items-center justify-center overflow-hidden bg-black">
-      {/* FIXED VIDEO BACKGROUND */}
+      {/* FIXED IMAGE BACKGROUND */}
       <div className="absolute inset-0 w-full h-full z-0">
-        <video
-          src={videoSrc}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-60"
+        <img
+          src="/mobile-bg.png"
+          alt="Background"
+          className="md:hidden absolute top-0 left-0 w-full h-full object-cover opacity-60"
+        />
+        <img
+          src="/desktop-bg.png"
+          alt="Background"
+          className="hidden md:block absolute top-0 left-0 w-full h-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-black/50" />
       </div>

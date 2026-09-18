@@ -16,15 +16,13 @@ export default function IntroLoader() {
     }
     
     // Build list of assets to preload
-    const isMobile = window.matchMedia('(max-width: 767px)').matches;
-    const landingVideo = isMobile ? '/portraitMobile.mp4' : '/landscapePC.mp4';
-    
     const assets = [
-      landingVideo,
       '/bgVideo.mp4',
       '/Game sound.mp3',
       '/Toph.png', '/Aang.png', '/zuko.png', '/katara.png',
       '/earth-bg.jpg', '/water-bg.jpg', '/air-bg.jpg', '/fire-bg.jpg',
+      '/bg_water.jpg', '/bg_earth.jpg', '/bg_fire.jpg', '/bg_air.jpg',
+      '/bg_water_mobile.jpg', '/bg_earth_mobile.jpg', '/bg_fire_mobile.jpg', '/bg_air_mobile.jpg',
       '/mobile-bg.png', '/desktop-bg.png'
     ];
 

@@ -100,7 +100,7 @@ export default function LandingPage() {
           isTransitioning.current = false;
         }, 600);
       }
-    }, 5000); // 5 seconds per slide
+    }, 3000); // 3 seconds per slide
 
     return () => clearInterval(timer);
   }, [currentStep]);

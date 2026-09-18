@@ -233,19 +233,19 @@ export default function LandingPage() {
               >
                 {!chapter.isCTA ? (
                   <>
-                    <p className="text-white/40 font-game tracking-[0.3em] text-sm uppercase mb-4">{chapter.eyebrow}</p>
-                    <h1 className="text-4xl md:text-5xl font-cinzel font-light tracking-widest text-white mb-2 leading-tight">
+                    <p className="text-white/60 font-game tracking-[0.3em] text-sm uppercase mb-4 [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">{chapter.eyebrow}</p>
+                    <h1 className="text-4xl md:text-5xl font-cinzel font-bold tracking-widest text-white mb-2 leading-tight drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] [text-shadow:_0_4px_20px_rgb(0_0_0_/_100%)]">
                       {chapter.title}
                     </h1>
-                    <h2 className="text-xl font-cinzel text-white/50 tracking-wider mb-4 italic">{chapter.subtitle}</h2>
-                    <p className="text-white/70 font-noto font-light tracking-wide leading-relaxed text-sm md:text-base">
+                    <h2 className="text-xl font-cinzel text-white/70 tracking-wider mb-4 italic drop-shadow-md [text-shadow:_0_2px_15px_rgb(0_0_0_/_80%)]">{chapter.subtitle}</h2>
+                    <p className="text-white font-noto font-light tracking-wide leading-relaxed text-sm md:text-base [text-shadow:_0_2px_8px_rgb(0_0_0_/_90%)]">
                       {chapter.description}
                     </p>
                   </>
                 ) : (
                   <div className="text-center w-full max-w-lg mx-auto px-6">
-                    <p className="text-white/40 font-game tracking-[0.4em] text-sm uppercase mb-6">{chapter.eyebrow}</p>
-                    <h1 className="text-5xl md:text-7xl font-cinzel font-light tracking-[0.15em] text-white mb-10">
+                    <p className="text-white/60 font-game tracking-[0.4em] text-sm uppercase mb-6 [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">{chapter.eyebrow}</p>
+                    <h1 className="text-5xl md:text-7xl font-cinzel font-bold tracking-[0.15em] text-white mb-10 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] [text-shadow:_0_4px_20px_rgb(0_0_0_/_100%)]">
                       {chapter.title}
                     </h1>
                     

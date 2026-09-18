@@ -50,8 +50,8 @@ const CHAPTERS = [
     description: '',
     position: 'inset-0 flex flex-col items-center justify-center text-center',
     isCTA: true,
-    bgDesktop: '/bg_air.jpg',
-    bgMobile: '/bg_air_mobile.jpg'
+    bgDesktop: '/desktop-bg.png',
+    bgMobile: '/mobile-bg.png'
   }
 ];
 

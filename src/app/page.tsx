@@ -131,7 +131,7 @@ export default function LandingPage() {
         setCurrentStep(s => s + 1);
         setTimeout(() => isTransitioning.current = false, 1200);
       }
-    }, 6000); // 6 seconds per slide
+    }, 4000); // 4 seconds per slide
 
     return () => clearInterval(timer);
   }, [currentStep]);

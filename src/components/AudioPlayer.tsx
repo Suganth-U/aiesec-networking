@@ -9,7 +9,6 @@ export default function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  const isLandingPage = pathname === '/';
   const isHidden = pathname?.startsWith('/admin');
 
   // We use isGlobalMuted to track the user's preference across the app.
@@ -37,8 +36,8 @@ export default function AudioPlayer() {
   useEffect(() => {
     if (!audioRef.current) return;
     
-    // We only play Game sound.mp3 if NOT on landing page, NOT admin, and NOT muted
-    if (!isLandingPage && !isHidden && !isGlobalMuted) {
+    // We play Game sound.mp3 everywhere EXCEPT admin page, and ONLY if NOT muted
+    if (!isHidden && !isGlobalMuted) {
       audioRef.current.volume = 0.3;
       audioRef.current.play().catch(() => {
         // Autoplay failed, fallback to muted state
@@ -47,7 +46,7 @@ export default function AudioPlayer() {
     } else {
       audioRef.current.pause();
     }
-  }, [isLandingPage, isHidden, isGlobalMuted]);
+  }, [isHidden, isGlobalMuted]);
 
   // Sync global mute state with window for other components (like video in page.tsx)
   useEffect(() => {

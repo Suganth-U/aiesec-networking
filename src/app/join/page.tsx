@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowLeft, User as UserIcon, PartyPopper, AlertTriangle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { signInAnonymously } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, onSnapshot } from 'firebase/firestore';
 import { FrontOffice, Role } from '@/types';
 import { GROUPS } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
@@ -42,6 +42,15 @@ export default function JoinPage() {
   const [frontOffice, setFrontOffice] = useState<FrontOffice | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [takenNames, setTakenNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'users'), (snap) => {
+      const names = snap.docs.map(doc => doc.data().name?.trim().toLowerCase()).filter(Boolean);
+      setTakenNames(names);
+    });
+    return () => unsub();
+  }, []);
 
   const { setCurrentPage, setActiveElement } = useSceneState();
 
@@ -188,20 +197,29 @@ export default function JoinPage() {
               </div>
 
               <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-6 flex flex-col gap-6">
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 relative">
                   <label className="text-sm font-medium text-white/90 font-avatar">Name *</label>
                   <input
                     type="text" autoFocus required
                     placeholder="Enter your name"
-                    className="w-full bg-white/5 border border-white/10 rounded-xl h-12 px-4 text-lg font-avatar text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all [text-shadow:0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-md"
+                    className={`w-full bg-white/5 border rounded-xl h-12 px-4 text-lg font-avatar text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:border-transparent transition-all [text-shadow:0_2px_4px_rgba(0,0,0,0.8)] drop-shadow-md ${
+                      fullName.trim() && takenNames.includes(fullName.trim().toLowerCase()) 
+                        ? 'border-red-500/50 focus:ring-red-500/50' 
+                        : 'border-white/10 focus:ring-white/50'
+                    }`}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
+                  {fullName.trim() && takenNames.includes(fullName.trim().toLowerCase()) && (
+                    <p className="text-xs text-red-400 font-medium mt-1">
+                      The player name is already taken. Use a different one.
+                    </p>
+                  )}
                 </div>
 
                 <button
                   onClick={goNext}
-                  disabled={!fullName.trim()}
+                  disabled={!fullName.trim() || takenNames.includes(fullName.trim().toLowerCase())}
                   className="w-full bg-white hover:bg-gray-200 text-black font-avatar text-lg tracking-widest rounded-xl h-12 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98] shadow-lg shadow-white/10"
                 >
                   Continue <ArrowRight className="w-4 h-4" />

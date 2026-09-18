@@ -73,8 +73,13 @@ export default function NetworkPage() {
     if (!uid) return;
     const unsubUser = onSnapshot(doc(db, 'users', uid), (snap) => {
       setUserLoaded(true);
-      if (snap.exists()) setUser(snap.data() as User);
-      else setError('notRegistered');
+      if (snap.exists()) {
+        setUser(snap.data() as User);
+      } else {
+        localStorage.removeItem('aiesec-uid');
+        localStorage.removeItem('aiesec-group');
+        router.push('/join');
+      }
     }, () => { setUserLoaded(true); setError('firestore'); });
 
     const unsubSession = onSnapshot(doc(db, 'sessions', 'main-event'), async (snap) => {
@@ -142,26 +147,7 @@ export default function NetworkPage() {
         );
       }
     
-      if (error === 'notRegistered') {
-        return (
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm text-center">
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/20 flex items-center justify-center mb-5">
-                  <AlertCircle className="w-8 h-8 text-amber-400" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2">Not Registered</h2>
-                <p className="text-sm text-white/50 mb-6">You need to register before joining.</p>
-                <button onClick={() => { localStorage.removeItem('aiesec-uid'); localStorage.removeItem('aiesec-group'); router.push('/join'); }} className="w-full bg-white text-black hover:bg-gray-200 font-medium rounded-xl h-11 flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
-                  <ArrowLeft className="w-4 h-4" /> Go to Registration
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      }
-    
-      if (!sessionLoaded || !userLoaded || !user || !session || myGroupId === null) {
+            if (!sessionLoaded || !userLoaded || !user || !session || myGroupId === null) {
         return (
           <div className="flex-1 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">

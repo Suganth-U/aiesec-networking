@@ -168,9 +168,15 @@ export default function AdminPage() {
     const timer = setInterval(() => {
       const next = session.timeRemaining - 1;
       if (next <= 0) {
-        updateDoc(doc(db, 'sessions', 'main-event'), {
-          timeRemaining: 0, status: 'waiting'
-        });
+        if (session.currentRound === MAX_ROUND_INDEX) {
+          updateDoc(doc(db, 'sessions', 'main-event'), {
+            timeRemaining: 0, status: 'finished'
+          });
+        } else {
+          updateDoc(doc(db, 'sessions', 'main-event'), {
+            timeRemaining: 0, status: 'waiting'
+          });
+        }
       } else {
         updateDoc(doc(db, 'sessions', 'main-event'), {
           timeRemaining: next
@@ -243,6 +249,20 @@ export default function AdminPage() {
     const batch = writeBatch(db);
     users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
     await batch.commit();
+  };
+
+  const finishEvent = () => {
+    if (!session) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Finish Event',
+      message: 'Are you sure you want to finish the event? This will show the congratulations screen to all players.',
+      isDangerous: false,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        await updateSession({ status: 'finished', timeRemaining: 0 });
+      }
+    });
   };
 
   const addQuestion = async () => {
@@ -649,9 +669,15 @@ export default function AdminPage() {
                     <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button onClick={nextRound} disabled={session.currentRound >= MAX_ROUND_INDEX} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
-                      Next <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {session.currentRound >= MAX_ROUND_INDEX ? (
+                      <button onClick={finishEvent} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
+                        Finish Event <Check className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button onClick={nextRound} disabled={session.currentRound >= MAX_ROUND_INDEX} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                        Next <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

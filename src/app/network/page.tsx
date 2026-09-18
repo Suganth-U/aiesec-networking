@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { CheckCircle2, Search, Clock, Sparkles, AlertCircle, ArrowLeft } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
@@ -200,23 +201,7 @@ export default function NetworkPage() {
 
   // ── FINISHED ──
   if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === MAX_ROUND_INDEX)) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-sm text-center">
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-8">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/20 flex items-center justify-center mb-5">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-6">🎉 You Did It!</h2>
-            <div className="space-y-4 text-sm md:text-base text-white/80 font-medium leading-relaxed">
-              <p>Every great relationship starts with a simple conversation.</p>
-              <p>Today, you didn't just meet new people you built new connections.</p>
-              <p className="text-emerald-400 font-bold pt-2">Thank you for being part of this journey</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    );
+    return <CongratsScreen user={user} myElement={myElement} />;
   }
 
   // ── FINISHED ROUND ──
@@ -432,6 +417,103 @@ export default function NetworkPage() {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air' }) {
+  useEffect(() => {
+    // Fire Confetti!
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+      });
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
+  }, []);
+
+  const getCharacterMessage = () => {
+    switch(myElement) {
+      case 'water': return "You adapted gracefully like water! Masterful networking.";
+      case 'earth': return "Solid connections! You stood your ground like a true Earthbender.";
+      case 'fire': return "You sparked amazing conversations! Your energy was fiery.";
+      case 'air': return "You found your freedom! Your networking was a breeze.";
+      default: return "You mastered the four nations of networking!";
+    }
+  };
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <motion.div 
+        initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+        animate={{ opacity: 1, y: 0, scale: 1 }} 
+        transition={{ type: 'spring', bounce: 0.5, duration: 1 }}
+        className="w-full max-w-lg z-10"
+      >
+        <div className="relative">
+          {/* Tooltip Message */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ delay: 1, type: 'spring' }}
+            className="absolute -top-16 md:-top-20 -right-4 md:-right-8 bg-white text-black p-4 rounded-2xl rounded-bl-sm font-cinzel font-bold shadow-2xl z-20 max-w-[200px]"
+          >
+            {getCharacterMessage()}
+          </motion.div>
+
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 md:p-12 text-center shadow-[0_0_50px_rgba(255,255,255,0.1)] relative overflow-hidden">
+            {/* Shimmer Effect */}
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+              animate={{ x: ['-200%', '200%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+            />
+            
+            <div className="flex justify-center mb-6 relative z-10 h-[150px]">
+              <AvatarCharacter element={myElement} className="scale-150 transform-origin-bottom" />
+            </div>
+
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-4xl md:text-5xl font-cinzel font-bold text-white mb-4 tracking-wider"
+            >
+              HURRAY!
+            </motion.h2>
+
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+              className="space-y-3 text-sm md:text-base text-white/80 font-noto font-light leading-relaxed max-w-xs mx-auto"
+            >
+              <p>You have successfully completed all four rounds.</p>
+              <p className="font-bold text-white pt-2 border-t border-white/20">
+                Welcome to the unified network, {user.name}.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }

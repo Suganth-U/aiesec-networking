@@ -6,23 +6,15 @@ import { Play } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 const CHAPTERS = [
-  {
-    eyebrow: 'Welcome',
-    title: 'THE FOUR NATIONS',
-    subtitle: 'Must Unite',
-    description: 'A networking event transcending boundaries. Four distinct front offices, brought together for one purpose.',
-    position: 'bottom-28 left-8 md:bottom-32 md:left-24 text-left',
-    mobileTime: 0,
-    pcTime: 0
-  },
+
   {
     eyebrow: 'Chapter 01 · Water',
     title: 'THE FLOW OF CHANGE',
     subtitle: 'Adapt & Overcome',
     description: 'Like the ocean, relationships must flow and adapt. Discover the fluidity and healing energy of the Water Tribe.',
     position: 'bottom-28 left-8 md:bottom-32 md:left-24 text-left',
-    mobileTime: 1 + 19/30,
-    pcTime: 1 + 19/30
+    bgDesktop: '/bg_water.jpg',
+    bgMobile: '/bg_water_mobile.jpg'
   },
   {
     eyebrow: 'Chapter 02 · Earth',
@@ -30,8 +22,8 @@ const CHAPTERS = [
     subtitle: 'Unbreakable Foundations',
     description: 'Build solid, unshakeable connections. Embrace the resilience, strength, and unwavering stance of the Earth Kingdom.',
     position: 'top-32 right-8 md:top-1/3 md:right-24 text-right',
-    mobileTime: 3 + 13/30,
-    pcTime: 3 + 13/30
+    bgDesktop: '/bg_earth.jpg',
+    bgMobile: '/bg_earth_mobile.jpg'
   },
   {
     eyebrow: 'Chapter 03 · Fire',
@@ -39,8 +31,8 @@ const CHAPTERS = [
     subtitle: 'Ignite the Conversation',
     description: 'Fuel the drive for passion and innovation. Forge powerful, lasting bonds with the fierce energy of the Fire Nation.',
     position: 'top-32 left-8 md:top-32 md:left-24 text-left',
-    mobileTime: 5 + 9/30,
-    pcTime: 5 + 9/30
+    bgDesktop: '/bg_fire.jpg',
+    bgMobile: '/bg_fire_mobile.jpg'
   },
   {
     eyebrow: 'Chapter 04 · Air',
@@ -48,8 +40,8 @@ const CHAPTERS = [
     subtitle: 'A New Perspective',
     description: 'Let go of earthly tethers and embrace agility. See the world from a higher vantage point alongside the Air Nomads.',
     position: 'bottom-28 right-8 md:bottom-32 md:right-24 text-right',
-    mobileTime: 7 + 0/30, 
-    pcTime: 7 + 0/30     
+    bgDesktop: '/bg_air.jpg',
+    bgMobile: '/bg_air_mobile.jpg'
   },
   {
     eyebrow: 'The Convergence',
@@ -58,26 +50,25 @@ const CHAPTERS = [
     description: '',
     position: 'inset-0 flex flex-col items-center justify-center text-center',
     isCTA: true,
-    mobileTime: 999,
-    pcTime: 999
+    bgDesktop: '/bg_air.jpg',
+    bgMobile: '/bg_air_mobile.jpg'
   }
 ];
 
 export default function LandingPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [duration, setDuration] = useState(0);
-  const [videoSrc, setVideoSrc] = useState<string>('/landscapePC.mp4');
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Handle Responsive Video Source
+  // Handle Responsive Image Source
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 767px)');
     const updateSrc = (e: MediaQueryList | MediaQueryListEvent) => {
-      setVideoSrc(e.matches ? '/portraitMobile.mp4' : '/landscapePC.mp4');
+      setIsMobile(e.matches);
     };
     updateSrc(mql);
     mql.addEventListener('change', updateSrc);
     return () => mql.removeEventListener('change', updateSrc);
   }, []);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [visibleStep, setVisibleStep] = useState(0);
 
@@ -88,36 +79,11 @@ export default function LandingPage() {
     isTransitioning.current = true;
     setVisibleStep(-1);
     setCurrentStep(index);
-    setTimeout(() => isTransitioning.current = false, 1200);
+    setTimeout(() => {
+      setVisibleStep(index);
+      isTransitioning.current = false;
+    }, 600);
   };
-
-  // Robust video metadata loader and global mute listener
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    
-    // Listen for global mute changes from AudioPlayer
-    const handleMuteChange = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (video) {
-        video.muted = customEvent.detail.isMuted;
-      }
-    };
-    window.addEventListener('globalMuteChange', handleMuteChange);
-    
-    // We initialize as unmuted (or muted depending on how the browser reacts, but React's muted={false} is set)
-    
-    const onReady = () => setDuration(video.duration);
-    video.addEventListener('loadedmetadata', onReady);
-    
-    if (video.readyState >= 1) {
-      onReady();
-    }
-    return () => {
-      window.removeEventListener('globalMuteChange', handleMuteChange);
-      video.removeEventListener('loadedmetadata', onReady);
-    };
-  }, [videoSrc]);
 
   // Auto-advance chapters with a time interval
   useEffect(() => {
@@ -129,71 +95,38 @@ export default function LandingPage() {
         isTransitioning.current = true;
         setVisibleStep(-1);
         setCurrentStep(s => s + 1);
-        setTimeout(() => isTransitioning.current = false, 1200);
+        setTimeout(() => {
+          setVisibleStep(currentStep + 1);
+          isTransitioning.current = false;
+        }, 600);
       }
-    }, 4000); // 4 seconds per slide
+    }, 5000); // 5 seconds per slide
 
     return () => clearInterval(timer);
   }, [currentStep]);
 
-  // Play video segments triggered by step change
-  useEffect(() => {
-    if (!videoRef.current || duration === 0) return;
-    const video = videoRef.current;
-    
-    
-    const isMobile = window.matchMedia('(max-width: 767px)').matches;
-    let targetTime = isMobile ? CHAPTERS[currentStep].mobileTime : CHAPTERS[currentStep].pcTime;
-    if (targetTime === 999) targetTime = duration;
-    let rAF: number;
-
-    const checkTime = () => {
-      if (Math.abs(video.currentTime - targetTime) < 0.1) {
-        if (!video.paused) video.pause();
-        setVisibleStep(currentStep); // Show the text once video arrives!
-        return;
-      }
-
-      if (video.currentTime < targetTime) {
-        if (video.paused) {
-          const promise = video.play();
-          if (promise !== undefined) {
-            promise.catch(() => {
-              // Browser blocked unmuted autoplay on scroll.
-              // Fallback to muted so the video still plays visually.
-              video.muted = true;
-              video.play().catch(() => {});
-            });
-          }
-        }
-      } else {
-        if (!video.paused) video.pause();
-        video.currentTime -= Math.min(0.2, video.currentTime - targetTime);
-      }
-
-      rAF = requestAnimationFrame(checkTime);
-    };
-
-    rAF = requestAnimationFrame(checkTime);
-    return () => cancelAnimationFrame(rAF);
-  }, [currentStep, duration]);
-
   return (
     <div className="relative bg-black w-full h-[100dvh] overflow-hidden">
       
-      {/* FIXED VIDEO BACKGROUND */}
+      {/* DYNAMIC PHOTO BACKGROUND */}
       <div className="absolute inset-0 w-full h-full z-0">
-        <video
-          ref={videoRef}
-          src={videoSrc}
-          className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
-          playsInline
-          autoPlay
-          muted
-          defaultMuted
-          preload="auto"
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
+        <AnimatePresence initial={false}>
+          {CHAPTERS.map((chapter, i) => (
+            i === currentStep && (
+              <motion.img
+                key={i}
+                src={isMobile ? chapter.bgMobile : chapter.bgDesktop}
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={{ opacity: 0.7, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 1.5, ease: "easeInOut" }}
+                className="absolute top-0 left-0 w-full h-full object-cover object-center"
+                alt={chapter.title}
+              />
+            )
+          ))}
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)] z-0 pointer-events-none" />
       </div>
 
       {/* DYNAMIC TEXT LAYER */}
@@ -244,6 +177,16 @@ export default function LandingPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* SKIP BUTTON */}
+      {currentStep < CHAPTERS.length - 1 && (
+        <button
+          onClick={() => handleDotClick(CHAPTERS.length - 1)}
+          className="absolute top-6 right-6 md:top-10 md:right-10 z-50 px-6 py-2.5 rounded-full bg-black/40 hover:bg-white/20 backdrop-blur-xl border border-white/20 text-white/80 hover:text-white text-[10px] md:text-xs font-cinzel tracking-widest uppercase transition-all shadow-xl"
+        >
+          Skip Journey
+        </button>
+      )}
 
       {/* Progress Indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 opacity-70">

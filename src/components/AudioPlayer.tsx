@@ -10,8 +10,8 @@ export default function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Hide the music toggle button and mute music on admin page AND landing page
-  const isHidden = pathname?.startsWith('/admin') || pathname === '/';
+  // Hide the music toggle button and mute music on admin page
+  const isHidden = pathname?.startsWith('/admin');
 
   // Global Button Click Sound Effect
   useEffect(() => {

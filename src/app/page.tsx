@@ -84,10 +84,19 @@ export default function LandingPage() {
   const isTransitioning = useRef(false);
 
   const handleDotClick = (index: number) => {
-    if (isTransitioning.current || index === currentStep) return;
+    if (index === currentStep || isTransitioning.current) return;
     isTransitioning.current = true;
     setVisibleStep(-1);
     setCurrentStep(index);
+    
+    // Also seek the video!
+    if (videoRef.current) {
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      let t = isMobile ? CHAPTERS[index].mobileTime : CHAPTERS[index].pcTime;
+      if (t === 999) t = (videoRef.current.duration || 10) - 0.5;
+      videoRef.current.currentTime = t;
+    }
+    
     setTimeout(() => isTransitioning.current = false, 1200);
   };
 
@@ -295,7 +304,7 @@ export default function LandingPage() {
              </button>
            ))}
         </div>
-        <p className="font-cinzel text-[10px] tracking-[0.3em] uppercase pointer-events-none">Scroll to explore</p>
+        <p className="font-cinzel text-[10px] tracking-[0.3em] uppercase pointer-events-none">Cinematic Journey</p>
       </div>
     </div>
   );

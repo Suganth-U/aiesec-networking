@@ -32,53 +32,14 @@ export default function IntroLoader() {
     let isCancelled = false;
 
     const loadAsset = (url: string) => {
-      return new Promise<void>((resolve) => {
-        if (url.endsWith('.mp4')) {
-          const vid = document.createElement('video');
-          vid.src = url;
-          vid.preload = 'auto';
-          vid.muted = true;
-          vid.playsInline = true;
-          // canplaythrough means browser has buffered enough to play smoothly
-          vid.oncanplaythrough = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-          vid.onerror = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-          // Fallback timer just in case it stalls
-          setTimeout(() => { progressMap.set(url, 1); resolve(); }, 8000);
-        } else if (url.endsWith('.png') || url.endsWith('.jpg')) {
-          const img = new Image();
-          img.src = url;
-          img.onload = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-          img.onerror = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-        } else if (url.endsWith('.mp3')) {
-          const aud = new Audio();
-          aud.src = url;
-          aud.oncanplaythrough = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-          aud.onerror = () => {
-            progressMap.set(url, 1);
-            resolve();
-          };
-          setTimeout(() => { progressMap.set(url, 1); resolve(); }, 5000);
-        } else {
+      return new Promise<void>(async (resolve) => {
+        // Fallback timer
+        const timer = setTimeout(() => {
           progressMap.set(url, 1);
           resolve();
-        }
+        }, 15000);
 
-        // Simulate progress updates for UI
+        // Simulate progress updates for UI while downloading
         let fakeProgress = 0;
         const interval = setInterval(() => {
           if (isCancelled || fakeProgress >= 0.9) {
@@ -93,6 +54,20 @@ export default function IntroLoader() {
           const overall = (totalProgress / assets.length) * 100;
           setProgress(Math.min(overall, 99));
         }, 300);
+
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            await res.blob(); // fully download to browser cache
+          }
+        } catch (e) {
+          // ignore errors, fallback timer or resolve will handle it
+        }
+
+        clearInterval(interval);
+        clearTimeout(timer);
+        progressMap.set(url, 1);
+        resolve();
       });
     };
 

@@ -188,7 +188,9 @@ export default function LandingPage() {
           src={videoSrc}
           className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
-          muted={false}
+          autoPlay
+          muted
+          defaultMuted
           preload="auto"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />

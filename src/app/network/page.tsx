@@ -216,7 +216,7 @@ export default function NetworkPage() {
     
       // ── FINISHED ──
       if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === MAX_ROUND_INDEX)) {
-        return <CongratsScreen user={user} myElement={myElement} isMuted={isMuted} />;
+        return <CongratsScreen user={user} myElement={myElement} />;
       }
     
       // ── FINISHED ROUND ──
@@ -436,13 +436,8 @@ export default function NetworkPage() {
       );
     }
     
-    function CongratsScreen({ user, myElement, isMuted }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air', isMuted: boolean }) {
+    function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air' }) {
   const router = useRouter();
-
-  const isMutedRef = useRef(isMuted);
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-  }, [isMuted]);
 
   useEffect(() => {
     const audio = new Audio('/Fireworks.mp3');
@@ -450,10 +445,8 @@ export default function NetworkPage() {
 
     // Fire Confetti in a loop
     const triggerConfetti = () => {
-      if (!isMutedRef.current) {
-        audio.currentTime = 0;
-        audio.play().catch(e => console.log("Audio play blocked:", e));
-      }
+      audio.currentTime = 0;
+      audio.play().catch(e => console.log("Audio play blocked:", e));
 
       const duration = 2 * 1000;
       const end = Date.now() + duration;

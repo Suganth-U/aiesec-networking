@@ -238,7 +238,7 @@ export default function NetworkPage() {
       return (
         <div className="flex-1 flex flex-col relative">
           <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-            <video src="/bgVideo.mp4" autoPlay loop muted playsInline className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-60" />
+            <img src="/gamepage.jpg" alt="Background" className="absolute top-0 left-0 w-full h-full object-cover opacity-60" />
             <div className="absolute inset-0 bg-black/50" />
           </div>
           <div className="max-w-lg mx-auto w-full p-4 sm:p-6 flex flex-col flex-1 relative z-10 overflow-y-auto">

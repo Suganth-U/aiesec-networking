@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play } from 'lucide-react';
+import { Play, Volume2, VolumeX } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 const CHAPTERS = [
@@ -11,7 +11,7 @@ const CHAPTERS = [
     title: 'THE FOUR NATIONS',
     subtitle: 'Must Unite',
     description: 'A networking event transcending boundaries. Four distinct front offices, brought together for one purpose.',
-    position: 'bottom-16 left-8 md:bottom-24 md:left-24 text-left',
+    position: 'bottom-28 left-8 md:bottom-32 md:left-24 text-left',
     mobileTime: 0,
     pcTime: 0
   },
@@ -20,7 +20,7 @@ const CHAPTERS = [
     title: 'THE FLOW OF CHANGE',
     subtitle: 'Adapt & Overcome',
     description: 'Like the ocean, relationships must flow and adapt. Discover the fluidity and healing energy of the Water Tribe.',
-    position: 'bottom-16 left-8 md:bottom-24 md:left-24 text-left',
+    position: 'bottom-28 left-8 md:bottom-32 md:left-24 text-left',
     mobileTime: 1 + 19/30,
     pcTime: 1 + 19/30
   },
@@ -29,7 +29,7 @@ const CHAPTERS = [
     title: 'STAND YOUR GROUND',
     subtitle: 'Unbreakable Foundations',
     description: 'Build solid, unshakeable connections. Embrace the resilience, strength, and unwavering stance of the Earth Kingdom.',
-    position: 'top-1/3 right-8 md:right-24 text-right',
+    position: 'top-32 right-8 md:top-1/3 md:right-24 text-right',
     mobileTime: 3 + 13/30,
     pcTime: 3 + 13/30
   },
@@ -38,7 +38,7 @@ const CHAPTERS = [
     title: 'SPARK THE FLAME',
     subtitle: 'Ignite the Conversation',
     description: 'Fuel the drive for passion and innovation. Forge powerful, lasting bonds with the fierce energy of the Fire Nation.',
-    position: 'top-24 left-8 md:left-24 text-left',
+    position: 'top-32 left-8 md:top-32 md:left-24 text-left',
     mobileTime: 5 + 9/30,
     pcTime: 5 + 9/30
   },
@@ -47,9 +47,9 @@ const CHAPTERS = [
     title: 'FIND YOUR FREEDOM',
     subtitle: 'A New Perspective',
     description: 'Let go of earthly tethers and embrace agility. See the world from a higher vantage point alongside the Air Nomads.',
-    position: 'bottom-16 right-8 md:bottom-24 md:right-24 text-right',
-    mobileTime: 7 + 0/30, // PLEASE UPDATE THIS EXACT TIMESTAMP
-    pcTime: 7 + 0/30     // PLEASE UPDATE THIS EXACT TIMESTAMP
+    position: 'bottom-28 right-8 md:bottom-32 md:right-24 text-right',
+    mobileTime: 7 + 0/30, 
+    pcTime: 7 + 0/30     
   },
   {
     eyebrow: 'The Convergence',
@@ -80,7 +80,16 @@ export default function LandingPage() {
   }, []);
   const [currentStep, setCurrentStep] = useState(0);
   const [visibleStep, setVisibleStep] = useState(0);
+  const [isMuted, setIsMuted] = useState(true);
   const isTransitioning = useRef(false);
+
+  const handleDotClick = (index: number) => {
+    if (isTransitioning.current || index === currentStep) return;
+    isTransitioning.current = true;
+    setVisibleStep(-1);
+    setCurrentStep(index);
+    setTimeout(() => isTransitioning.current = false, 1200);
+  };
 
   // Robust video metadata loader
   useEffect(() => {
@@ -197,16 +206,25 @@ export default function LandingPage() {
     <div className="relative bg-black w-full h-[100dvh] overflow-hidden">
       
       {/* FIXED VIDEO BACKGROUND */}
-          <div className="absolute inset-0 w-full h-full z-0">
+      <div className="absolute inset-0 w-full h-full z-0">
         <video
           ref={videoRef}
           src={videoSrc}
           className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
+          muted={isMuted}
           preload="auto"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
       </div>
+
+      {/* MUTE TOGGLE */}
+      <button 
+        onClick={() => setIsMuted(!isMuted)}
+        className="absolute top-6 right-6 md:top-12 md:right-12 z-50 p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md border border-white/10 text-white transition-all shadow-xl"
+      >
+        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+      </button>
 
       {/* DYNAMIC TEXT LAYER */}
       <div className="absolute inset-0 z-10 pointer-events-none p-8 md:p-16">
@@ -219,7 +237,7 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
                 transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className={`absolute ${chapter.position} w-full ${chapter.isCTA ? 'max-w-none' : 'max-w-[90%] md:max-w-md'} ${chapter.isCTA ? 'pointer-events-auto' : ''}`}
+                className={`absolute ${chapter.position} w-full ${chapter.isCTA ? 'max-w-none' : 'max-w-[85%] sm:max-w-[70%] md:max-w-md'} ${chapter.isCTA ? 'pointer-events-auto' : ''}`}
               >
                 {!chapter.isCTA ? (
                   <>
@@ -258,13 +276,20 @@ export default function LandingPage() {
       </div>
 
       {/* Progress Indicator */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none opacity-50">
-        <div className="flex gap-2 mb-2">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 opacity-70">
+        <div className="flex gap-3 mb-1 pointer-events-auto">
            {CHAPTERS.map((_, i) => (
-             <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === currentStep ? 'w-6 bg-white' : 'w-2 bg-white/20'}`} />
+             <button 
+               key={i} 
+               onClick={() => handleDotClick(i)}
+               className="p-2 -m-2"
+               aria-label={`Go to chapter ${i + 1}`}
+             >
+               <div className={`h-1.5 rounded-full transition-all duration-500 ${i === currentStep ? 'w-8 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : 'w-2.5 bg-white/30 hover:bg-white/60'}`} />
+             </button>
            ))}
         </div>
-        <p className="font-cinzel text-[10px] tracking-[0.3em] uppercase">Scroll to explore</p>
+        <p className="font-cinzel text-[10px] tracking-[0.3em] uppercase pointer-events-none">Scroll to explore</p>
       </div>
     </div>
   );

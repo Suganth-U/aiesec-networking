@@ -10,44 +10,82 @@ export default function IntroLoader() {
   useEffect(() => {
     // Only show full loading sequence if not played this session
     const hasPlayed = sessionStorage.getItem('introLoaded');
+    if (hasPlayed) {
+      setIsVisible(false);
+      return;
+    }
     
-    // Determine which video to preload
+    // Build list of assets to preload
     const isMobile = window.matchMedia('(max-width: 767px)').matches;
-    const videoUrl = isMobile ? '/portraitMobile.mp4' : '/landscapePC.mp4';
-
-    const req = new XMLHttpRequest();
-    req.open('GET', videoUrl, true);
-    req.responseType = 'blob'; // Download as blob to force browser caching of the entire video
-
-    req.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = (event.loaded / event.total) * 100;
-        setProgress(percentComplete);
-      } else {
-        // Fallback using exact file sizes if server omits Content-Length
-        const total = isMobile ? 6564895 : 6754041;
-        const percentComplete = (event.loaded / total) * 100;
-        setProgress(Math.min(percentComplete, 99)); // Cap at 99 until finished
-      }
-    };
-
-    req.onload = () => {
-      if (req.status === 200 || req.status === 304) {
-        setProgress(100);
-        sessionStorage.setItem('introLoaded', 'true');
-        setTimeout(() => setIsVisible(false), 800); // Hold at 100% for a moment
-      }
-    };
-
-    req.onerror = () => {
-      // Fallback if XHR fails, just let them in
-      setProgress(100);
-      setTimeout(() => setIsVisible(false), 400);
-    };
-
-    req.send();
+    const landingVideo = isMobile ? '/portraitMobile.mp4' : '/landscapePC.mp4';
     
-    return () => req.abort();
+    const assets = [
+      landingVideo,
+      '/bgVideo.mp4',
+      '/Game sound.mp3',
+      '/Toph.png', '/Aang.png', '/zuko.png', '/katara.png',
+      '/earth-bg.jpg', '/water-bg.jpg', '/air-bg.jpg', '/fire-bg.jpg',
+      '/mobile-bg.png', '/desktop-bg.png'
+    ];
+
+    const progressMap = new Map<string, number>();
+    let isCancelled = false;
+
+    const loadAsset = (url: string) => {
+      return new Promise<void>((resolve, reject) => {
+        const req = new XMLHttpRequest();
+        req.open('GET', url, true);
+        req.responseType = 'blob';
+
+        req.onprogress = (event) => {
+          if (isCancelled) return;
+          if (event.lengthComputable) {
+            progressMap.set(url, event.loaded / event.total);
+          } else {
+            // Rough fallback if total size is unknown
+            progressMap.set(url, 0.5);
+          }
+          
+          // Calculate overall progress
+          let totalProgress = 0;
+          progressMap.forEach((val) => totalProgress += val);
+          const overall = (totalProgress / assets.length) * 100;
+          setProgress(Math.min(overall, 99));
+        };
+
+        req.onload = () => {
+          if (req.status === 200 || req.status === 304) {
+            progressMap.set(url, 1);
+            resolve();
+          } else {
+            progressMap.set(url, 1); // Skip on error so we don't hang
+            resolve();
+          }
+        };
+
+        req.onerror = () => {
+          progressMap.set(url, 1); // Skip on error
+          resolve();
+        };
+
+        req.send();
+      });
+    };
+
+    // Load everything in parallel
+    Promise.all(assets.map(url => {
+      progressMap.set(url, 0);
+      return loadAsset(url);
+    })).then(() => {
+      if (isCancelled) return;
+      setProgress(100);
+      sessionStorage.setItem('introLoaded', 'true');
+      setTimeout(() => setIsVisible(false), 800);
+    });
+    
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   return (

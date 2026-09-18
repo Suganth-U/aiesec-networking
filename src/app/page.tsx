@@ -1,154 +1,271 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { AvatarCharacter } from '@/components/NationSymbols';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Play } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
-const characters = [
-  { element: 'water', name: 'Katara', text: "Hi, I'm Katara. Find your match and flow like water." },
-  { element: 'earth', name: 'Toph', text: "I'm Toph! Break the ice and stand your ground." },
-  { element: 'fire', name: 'Zuko', text: "Zuko here. Spin the wheel to spark a conversation." },
-  { element: 'air', name: 'Aang', text: "Hi, I'm Aang! Beat the clock and make new friends." }
-] as const;
-
-function Typewriter({ text }: { text: string }) {
-  const [displayedText, setDisplayedText] = useState('');
-  
-  useEffect(() => {
-    setDisplayedText('');
-    let i = 0;
-    const timer = setInterval(() => {
-      setDisplayedText(text.substring(0, i + 1));
-      i++;
-      if (i >= text.length) clearInterval(timer);
-    }, 40);
-    return () => clearInterval(timer);
-  }, [text]);
-
-  return <span className="font-game text-lg tracking-wide text-white/90">{displayedText}</span>;
-}
+const CHAPTERS = [
+  {
+    eyebrow: 'Welcome',
+    title: 'THE FOUR NATIONS',
+    subtitle: 'Must Unite',
+    description: 'A networking event transcending boundaries. Four distinct front offices, brought together for one purpose.',
+    position: 'bottom-16 left-8 md:bottom-24 md:left-24 text-left',
+    mobileTime: 0,
+    pcTime: 0
+  },
+  {
+    eyebrow: 'Chapter 01 · Water',
+    title: 'THE FLOW OF CHANGE',
+    subtitle: 'Adapt & Overcome',
+    description: 'Like the ocean, relationships must flow and adapt. Discover the fluidity and healing energy of the Water Tribe.',
+    position: 'bottom-16 left-8 md:bottom-24 md:left-24 text-left',
+    mobileTime: 1 + 19/30,
+    pcTime: 1 + 19/30
+  },
+  {
+    eyebrow: 'Chapter 02 · Earth',
+    title: 'STAND YOUR GROUND',
+    subtitle: 'Unbreakable Foundations',
+    description: 'Build solid, unshakeable connections. Embrace the resilience, strength, and unwavering stance of the Earth Kingdom.',
+    position: 'top-1/3 right-8 md:right-24 text-right',
+    mobileTime: 3 + 13/30,
+    pcTime: 3 + 13/30
+  },
+  {
+    eyebrow: 'Chapter 03 · Fire',
+    title: 'SPARK THE FLAME',
+    subtitle: 'Ignite the Conversation',
+    description: 'Fuel the drive for passion and innovation. Forge powerful, lasting bonds with the fierce energy of the Fire Nation.',
+    position: 'top-24 left-8 md:left-24 text-left',
+    mobileTime: 5 + 9/30,
+    pcTime: 5 + 9/30
+  },
+  {
+    eyebrow: 'Chapter 04 · Air',
+    title: 'FIND YOUR FREEDOM',
+    subtitle: 'A New Perspective',
+    description: 'Let go of earthly tethers and embrace agility. See the world from a higher vantage point alongside the Air Nomads.',
+    position: 'bottom-16 right-8 md:bottom-24 md:right-24 text-right',
+    mobileTime: 7 + 0/30, // PLEASE UPDATE THIS EXACT TIMESTAMP
+    pcTime: 7 + 0/30     // PLEASE UPDATE THIS EXACT TIMESTAMP
+  },
+  {
+    eyebrow: 'The Convergence',
+    title: 'MASTER ALL FOUR',
+    subtitle: '',
+    description: '',
+    position: 'inset-0 flex flex-col items-center justify-center text-center',
+    isCTA: true,
+    mobileTime: 999,
+    pcTime: 999
+  }
+];
 
 export default function LandingPage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [duration, setDuration] = useState(0);
+  const [videoSrc, setVideoSrc] = useState<string>('/landscapePC.mp4');
 
+  // Handle Responsive Video Source
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % characters.length);
-    }, 6000);
-    return () => clearInterval(interval);
+    const mql = window.matchMedia('(max-width: 767px)');
+    const updateSrc = (e: MediaQueryList | MediaQueryListEvent) => {
+      setVideoSrc(e.matches ? '/portraitMobile.mp4' : '/landscapePC.mp4');
+    };
+    updateSrc(mql);
+    mql.addEventListener('change', updateSrc);
+    return () => mql.removeEventListener('change', updateSrc);
   }, []);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [visibleStep, setVisibleStep] = useState(0);
+  const isTransitioning = useRef(false);
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.15 },
-    },
-  };
+  // Robust video metadata loader
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const onReady = () => setDuration(video.duration);
+    video.addEventListener('loadedmetadata', onReady);
+    
+    if (video.readyState >= 1) {
+      onReady();
+    }
+    return () => video.removeEventListener('loadedmetadata', onReady);
+  }, [videoSrc]);
 
-  const itemVariants: Variants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 300, damping: 24 } },
-  };
+  // Wheel Event to change steps (Full Page Scroll)
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Ignore tiny trackpad scrolls
+      if (Math.abs(e.deltaY) < 30) return;
+      if (isTransitioning.current) return;
 
-  const currentChar = characters[currentIndex];
+      if (e.deltaY > 0 && currentStep < CHAPTERS.length - 1) {
+        isTransitioning.current = true;
+        setVisibleStep(-1); // Hide text immediately
+        setCurrentStep(s => s + 1);
+        setTimeout(() => isTransitioning.current = false, 1200); // Cooldown to prevent double-scroll
+      } else if (e.deltaY < 0 && currentStep > 0) {
+        isTransitioning.current = true;
+        setVisibleStep(-1); // Hide text immediately
+        setCurrentStep(s => s - 1);
+        setTimeout(() => isTransitioning.current = false, 1200);
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel);
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [currentStep]);
+
+  // Handle Touch/Swipe on mobile
+  useEffect(() => {
+    let touchStartY = 0;
+    const handleTouchStart = (e: TouchEvent) => touchStartY = e.touches[0].clientY;
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touchEndY = e.changedTouches[0].clientY;
+      const delta = touchStartY - touchEndY;
+      
+      if (Math.abs(delta) < 50 || isTransitioning.current) return;
+      
+      if (delta > 0 && currentStep < CHAPTERS.length - 1) {
+        isTransitioning.current = true;
+        setVisibleStep(-1);
+        setCurrentStep(s => s + 1);
+        setTimeout(() => isTransitioning.current = false, 1200);
+      } else if (delta < 0 && currentStep > 0) {
+        isTransitioning.current = true;
+        setVisibleStep(-1);
+        setCurrentStep(s => s - 1);
+        setTimeout(() => isTransitioning.current = false, 1200);
+      }
+    };
+
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentStep]);
+
+  // Play video segments triggered by step change
+  useEffect(() => {
+    if (!videoRef.current || duration === 0) return;
+    const video = videoRef.current;
+    
+    
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    let targetTime = isMobile ? CHAPTERS[currentStep].mobileTime : CHAPTERS[currentStep].pcTime;
+    if (targetTime === 999) targetTime = duration;
+    let rAF: number;
+
+    const checkTime = () => {
+      if (Math.abs(video.currentTime - targetTime) < 0.1) {
+        if (!video.paused) video.pause();
+        setVisibleStep(currentStep); // Show the text once video arrives!
+        return;
+      }
+
+      if (video.currentTime < targetTime) {
+        if (video.paused) {
+          const promise = video.play();
+          if (promise !== undefined) {
+            promise.catch(() => {
+              // Browser blocked unmuted autoplay on scroll.
+              // Fallback to muted so the video still plays visually.
+              video.muted = true;
+              video.play().catch(() => {});
+            });
+          }
+        }
+      } else {
+        if (!video.paused) video.pause();
+        video.currentTime -= Math.min(0.2, video.currentTime - targetTime);
+      }
+
+      rAF = requestAnimationFrame(checkTime);
+    };
+
+    rAF = requestAnimationFrame(checkTime);
+    return () => cancelAnimationFrame(rAF);
+  }, [currentStep, duration]);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-hidden relative">
-      <motion.div
-        className="max-w-xl w-full relative z-10 flex flex-col items-center text-center mt-10"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* Title */}
-        <motion.div variants={itemVariants} className="relative mb-6">
-          <motion.h1
-            className="text-5xl sm:text-7xl font-game font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent tracking-widest drop-shadow-lg"
-          >
-            Network
-          </motion.h1>
-          <motion.h1
-            className="text-5xl sm:text-7xl font-game font-bold text-white tracking-widest -mt-2 drop-shadow-lg"
-          >
-            & Bond
-          </motion.h1>
-          <p className="text-lg text-white/70 mt-4 font-game tracking-wider">
-            The four nations must unite.
-          </p>
-        </motion.div>
+    <div className="relative bg-black w-full h-[100dvh] overflow-hidden">
+      
+      {/* FIXED VIDEO BACKGROUND */}
+          <div className="absolute inset-0 w-full h-full z-0">
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          className="w-full h-full object-cover opacity-80"
+          playsInline
+          preload="auto"
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
+      </div>
 
-        {/* Merged Instructions & Character Card */}
-        <motion.div variants={itemVariants} className="w-full bg-black/30 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.5)] rounded-2xl p-6 sm:p-8 mb-8 flex flex-col gap-8">
-          
-          {/* Character Showcase with Tooltip */}
-          <div className="w-full flex flex-col items-center justify-center min-h-[200px] relative">
-            <AnimatePresence mode="wait">
+      {/* DYNAMIC TEXT LAYER */}
+      <div className="absolute inset-0 z-10 pointer-events-none p-8 md:p-16">
+        <AnimatePresence mode="wait">
+          {CHAPTERS.map((chapter, i) => (
+            i === visibleStep && (
               <motion.div
-                key={currentChar.name}
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 50 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                className="flex items-center justify-center gap-4 sm:gap-8 w-full"
+                key={i}
+                initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -30, filter: 'blur(10px)' }}
+                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                className={`absolute ${chapter.position} w-full ${chapter.isCTA ? 'max-w-none' : 'max-w-[90%] md:max-w-md'} ${chapter.isCTA ? 'pointer-events-auto' : ''}`}
               >
-                {/* Character Avatar */}
-                <div className="relative w-1/3 flex justify-end">
-                  <AvatarCharacter element={currentChar.element} className="scale-[1.2] z-10" />
-                </div>
-
-                {/* Tooltip Dialog Box */}
-                <div className="w-2/3 max-w-[280px] bg-black/40 backdrop-blur-xl border border-white/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] rounded-2xl p-5 text-left relative z-20">
-                  <div className="absolute top-1/2 -left-3 w-6 h-6 bg-black/40 border-t border-l border-white/20 transform -rotate-45 backdrop-blur-xl -translate-y-1/2 clip-path-polygon" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-                  <Typewriter text={currentChar.text} />
-                </div>
+                {!chapter.isCTA ? (
+                  <>
+                    <p className="text-white/40 font-game tracking-[0.3em] text-sm uppercase mb-4">{chapter.eyebrow}</p>
+                    <h1 className="text-4xl md:text-5xl font-cinzel font-light tracking-widest text-white mb-2 leading-tight">
+                      {chapter.title}
+                    </h1>
+                    <h2 className="text-xl font-cinzel text-white/50 tracking-wider mb-4 italic">{chapter.subtitle}</h2>
+                    <p className="text-white/70 font-noto font-light tracking-wide leading-relaxed text-sm md:text-base">
+                      {chapter.description}
+                    </p>
+                  </>
+                ) : (
+                  <div className="text-center w-full max-w-lg mx-auto px-6">
+                    <p className="text-white/40 font-game tracking-[0.4em] text-sm uppercase mb-6">{chapter.eyebrow}</p>
+                    <h1 className="text-5xl md:text-7xl font-cinzel font-light tracking-[0.15em] text-white mb-10">
+                      {chapter.title}
+                    </h1>
+                    
+                    <Link
+                      href="/join"
+                      className="group relative inline-flex px-10 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-full font-cinzel tracking-[0.2em] text-sm uppercase text-white transition-all overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-out" />
+                      <span className="relative flex items-center gap-4 group-hover:text-black transition-colors duration-500">
+                        Start Something Unfinished
+                        <Play className="w-4 h-4 fill-transparent group-hover:fill-black transition-colors duration-500" />
+                      </span>
+                    </Link>
+                  </div>
+                )}
               </motion.div>
-            </AnimatePresence>
-          </div>
+            )
+          ))}
+        </AnimatePresence>
+      </div>
 
-          <div className="h-px w-full bg-white/10" />
-
-          {/* Instructions List */}
-          <div className="text-left space-y-4">
-            <div className="flex gap-4 items-center">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0 text-2xl drop-shadow-md">💧</div>
-              <div>
-                <h3 className="text-xl font-game tracking-widest text-white">Find your match</h3>
-                <p className="text-sm font-game text-white/50 tracking-wider">Each nation seeks another.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 items-center">
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0 text-2xl drop-shadow-md">🔥</div>
-              <div>
-                <h3 className="text-xl font-game tracking-widest text-white">Break the ice</h3>
-                <p className="text-sm font-game text-white/50 tracking-wider">Spin for conversation starters.</p>
-              </div>
-            </div>
-            <div className="flex gap-4 items-center">
-              <div className="w-12 h-12 rounded-xl bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0 text-2xl drop-shadow-md">🌀</div>
-              <div>
-                <h3 className="text-xl font-game tracking-widest text-white">Beat the clock</h3>
-                <p className="text-sm font-game text-white/50 tracking-wider">Short rounds, 4 nations met.</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* CTA Button */}
-        <motion.div variants={itemVariants} className="w-full">
-          <Link
-            href="/join"
-            className="w-full bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-game text-2xl tracking-widest rounded-2xl h-16 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-[0_0_20px_rgba(6,182,212,0.4)] border border-cyan-400/30 group"
-          >
-            START QUEST
-            <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-          </Link>
-        </motion.div>
-
-        <p className="text-sm font-game tracking-widest text-white/40 mt-6">Press Start · No Account Needed</p>
-      </motion.div>
+      {/* Progress Indicator */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 pointer-events-none opacity-50">
+        <div className="flex gap-2 mb-2">
+           {CHAPTERS.map((_, i) => (
+             <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === currentStep ? 'w-6 bg-white' : 'w-2 bg-white/20'}`} />
+           ))}
+        </div>
+        <p className="font-cinzel text-[10px] tracking-[0.3em] uppercase">Scroll to explore</p>
+      </div>
     </div>
   );
 }

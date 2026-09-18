@@ -29,7 +29,7 @@ export const MATCHMAKING_MATRIX = [
 /**
  * Gets the target group ID for a specific group in a specific round.
  * @param myGroupId The ID of the current group (1-8).
- * @param roundIndex The 0-indexed round number (0-6).
+ * @param roundIndex The 0-indexed round number (0-3).
  * @returns The ID of the group to meet, or null if invalid round/group.
  */
 export const getTargetGroupForRound = (myGroupId: number, roundIndex: number): number | null => {

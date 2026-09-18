@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 export default function AnimatedBackground() {
   const pathname = usePathname();
   
-  if (pathname?.startsWith('/admin')) {
+  if (pathname === '/' || pathname?.startsWith('/admin') || pathname?.startsWith('/network')) {
     return null;
   }
 

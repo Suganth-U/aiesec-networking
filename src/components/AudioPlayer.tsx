@@ -9,7 +9,7 @@ export default function AudioPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const shouldHide = pathname?.startsWith('/network') || pathname?.startsWith('/admin');
+  const shouldHide = pathname === '/' || pathname?.startsWith('/network') || pathname?.startsWith('/admin');
 
   // Try to autoplay on mount
   useEffect(() => {

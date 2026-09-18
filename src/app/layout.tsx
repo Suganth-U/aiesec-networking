@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Logo from '@/components/Logo';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import AudioPlayer from '@/components/AudioPlayer';
+import SceneCanvasWrapper from '@/components/3d/SceneCanvasWrapper';
+
+import IntroLoader from '@/components/IntroLoader';
 
 import { Cinzel, Noto_Sans, VT323 } from 'next/font/google';
 
@@ -23,12 +25,19 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`min-h-screen flex flex-col ${notoSans.className} ${cinzel.variable} ${vt323.variable} bg-slate-950 text-white`}>
+        {/* Cinematic Intro Loader */}
+        <IntroLoader />
+
+        {/* Layer 1: Background image */}
         <AnimatedBackground />
+
+        {/* Layer 2: 3D scene (fixed, behind UI) */}
+        <SceneCanvasWrapper />
+
+        {/* Layer 3: Audio */}
         <AudioPlayer />
-        
 
-
-        {/* Main Content */}
+        {/* Layer 4: Main Content (on top) */}
         <main className="flex-1 flex flex-col relative z-10">
           {children}
         </main>

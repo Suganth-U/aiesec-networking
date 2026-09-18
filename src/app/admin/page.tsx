@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Session, User } from '@/types';
 import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle } from 'lucide-react';
-import { GROUPS } from '@/lib/matrix';
+import { GROUPS, MATCHMAKING_MATRIX } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 
 const DEFAULT_PASSWORD = 'admin123';
+const DEFAULT_ROUND_TIME = 300; // 5 minutes
+const TOTAL_ROUNDS = MATCHMAKING_MATRIX.length;
+const MAX_ROUND_INDEX = TOTAL_ROUNDS - 1;
 
 export default function AdminPage() {
   // ── Auth State ──
@@ -41,6 +44,9 @@ export default function AdminPage() {
     isDangerous: false,
     onConfirm: () => {}
   });
+
+  // ── Group Users Modal State ──
+  const [selectedGroupForModal, setSelectedGroupForModal] = useState<string | null>(null);
 
   // ── Load/Initialize admin password from Firestore ──
   useEffect(() => {
@@ -133,12 +139,17 @@ export default function AdminPage() {
         setDoc(doc(db, 'sessions', 'main-event'), {
           status: 'waiting',
           currentRound: 0,
-          timeRemaining: 300,
+          timeRemaining: DEFAULT_ROUND_TIME,
           isPaused: false,
           questions: [
             'Why did you join AIESEC?',
             "What's something people don't know about you?",
-            "What's your biggest goal this year?"
+            "What's your biggest goal this year?",
+            "If you could do an AIESEC exchange anywhere in the world, where would you go and why?",
+            "What's one skill you've gained from AIESEC that surprised you?",
+            "Describe your AIESEC journey in 3 words.",
+            "What's the best advice you've ever received from a fellow AIESECer?",
+            "If you were LC President for a day, what's the first thing you'd change?"
           ]
         });
       }
@@ -155,9 +166,16 @@ export default function AdminPage() {
   useEffect(() => {
     if (!session || session.status !== 'active' || session.timeRemaining <= 0 || session.isPaused) return;
     const timer = setInterval(() => {
-      updateDoc(doc(db, 'sessions', 'main-event'), {
-        timeRemaining: session.timeRemaining - 1
-      });
+      const next = session.timeRemaining - 1;
+      if (next <= 0) {
+        updateDoc(doc(db, 'sessions', 'main-event'), {
+          timeRemaining: 0, status: 'waiting'
+        });
+      } else {
+        updateDoc(doc(db, 'sessions', 'main-event'), {
+          timeRemaining: next
+        });
+      }
     }, 1000);
     return () => clearInterval(timer);
   }, [session]);
@@ -168,20 +186,20 @@ export default function AdminPage() {
 
   const nextRound = async () => {
     if (!session) return;
-    const nextRnd = Math.min(session.currentRound + 1, 3);
-    await updateSession({ currentRound: nextRnd, timeRemaining: 300, status: 'waiting' });
-    users.forEach((u) => {
-      updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
-    });
+    const nextRnd = Math.min(session.currentRound + 1, MAX_ROUND_INDEX);
+    await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting' });
+    const batch = writeBatch(db);
+    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
+    await batch.commit();
   };
 
   const prevRound = async () => {
     if (!session || session.currentRound === 0) return;
     const prevRnd = Math.max(session.currentRound - 1, 0);
-    await updateSession({ currentRound: prevRnd, timeRemaining: 300, status: 'waiting' });
-    users.forEach((u) => {
-      updateDoc(doc(db, 'users', u.id), { status: 'waiting' });
-    });
+    await updateSession({ currentRound: prevRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting' });
+    const batch = writeBatch(db);
+    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
+    await batch.commit();
   };
 
   const resetSession = () => {
@@ -192,10 +210,10 @@ export default function AdminPage() {
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
-        users.forEach((u) => {
-          updateDoc(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] });
-        });
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false });
+        const batch = writeBatch(db);
+        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] }));
+        await batch.commit();
       }
     });
   };
@@ -209,7 +227,7 @@ export default function AdminPage() {
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         // Instantly reset session to waiting so it doesn't auto-start or keep ticking
-        await updateSession({ currentRound: 0, timeRemaining: 300, status: 'waiting', isPaused: false });
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false });
         
         // Delete all user documents
         for (const u of users) {
@@ -220,7 +238,11 @@ export default function AdminPage() {
   };
 
   const startSession = async () => {
-    await updateSession({ status: 'active', currentRound: 0, timeRemaining: 300, isPaused: false });
+    if (!session) return;
+    await updateSession({ status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
+    const batch = writeBatch(db);
+    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
+    await batch.commit();
   };
 
   const addQuestion = async () => {
@@ -444,6 +466,52 @@ export default function AdminPage() {
     </div>
   );
 
+
+
+  // ══════════════════════════════════════
+  // GROUP USERS MODAL
+  // ══════════════════════════════════════
+  const selectedGroupUsers = selectedGroupForModal 
+    ? users.filter(u => `${u.frontOffice} - ${u.role}` === selectedGroupForModal)
+    : [];
+    
+  const groupUsersModal = selectedGroupForModal && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+        onClick={() => setSelectedGroupForModal(null)}
+      />
+      
+      {/* Dialog */}
+      <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-zinc-900">{selectedGroupForModal} ({selectedGroupUsers.length})</h3>
+          <button onClick={() => setSelectedGroupForModal(null)} className="p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-all">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="overflow-y-auto flex-1 space-y-2 pr-2">
+          {selectedGroupUsers.length > 0 ? (
+            selectedGroupUsers.map(u => (
+              <div key={u.id} className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
+                <span className="text-sm font-medium text-zinc-800">{u.name}</span>
+                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : u.status === 'finished_round' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-200 text-zinc-600'}`}>
+                  {u.status.replace('_', ' ')}
+                </span>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-sm text-zinc-500">
+              No participants in this group yet.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   // Loading
   if (!session) {
     return (
@@ -471,6 +539,7 @@ export default function AdminPage() {
     <div className="flex-1 bg-white text-zinc-900 p-4 sm:p-8">
       {changePasswordModal}
       {confirmModal}
+      {groupUsersModal}
 
       <div className="max-w-6xl mx-auto">
 
@@ -566,7 +635,7 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Current Round</p>
-                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ 4</span></p>
+                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ {TOTAL_ROUNDS}</span></p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={resetSession} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-all active:scale-[0.98]">
@@ -580,7 +649,7 @@ export default function AdminPage() {
                     <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button onClick={nextRound} disabled={session.currentRound >= 3} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                    <button onClick={nextRound} disabled={session.currentRound >= MAX_ROUND_INDEX} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
                       Next <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -645,7 +714,7 @@ export default function AdminPage() {
                     ) : (
                       <>
                         <span className="text-sm text-zinc-700 leading-relaxed">{q}</span>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
                           <button
                             onClick={() => {
                               setEditingIndex(i);
@@ -698,13 +767,17 @@ export default function AdminPage() {
                 {usersByGroup.map((g) => {
                   const colors = getGroupColor(g.color);
                   return (
-                    <div key={g.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/5 backdrop-blur-md border border-zinc-100">
+                    <button 
+                      key={g.id} 
+                      onClick={() => setSelectedGroupForModal(g.name)}
+                      className="w-full flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-100 transition-colors active:scale-[0.98] cursor-pointer"
+                    >
                       <div className="flex items-center gap-2.5">
                         <div className={`w-3 h-3 rounded-full ${colors.dot}`} />
                         <span className="text-xs font-semibold text-zinc-700">{g.name}</span>
                       </div>
                       <span className="text-sm font-bold text-zinc-900 font-mono">{g.count}</span>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

@@ -15,7 +15,7 @@ export interface User {
 
 export interface Session {
   status: SessionStatus;
-  currentRound: number; // 0-7
+  currentRound: number; // 0-3
   timeRemaining: number; // seconds
   questions: string[]; // Discussion prompts for the current round
   isPaused?: boolean;

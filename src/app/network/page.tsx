@@ -216,7 +216,7 @@ export default function NetworkPage() {
     
       // ── FINISHED ──
       if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === MAX_ROUND_INDEX)) {
-        return <CongratsScreen user={user} myElement={myElement} />;
+        return <CongratsScreen user={user} myElement={myElement} isMuted={isMuted} />;
       }
     
       // ── FINISHED ROUND ──
@@ -436,43 +436,59 @@ export default function NetworkPage() {
       );
     }
     
-    function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air' }) {
-      const router = useRouter();
-    
-      useEffect(() => {
-        // Fire Confetti in a loop
-        const triggerConfetti = () => {
-          const duration = 2 * 1000;
-          const end = Date.now() + duration;
-    
-          const frame = () => {
-            confetti({
-              particleCount: 5,
-              angle: 60,
-              spread: 55,
-              origin: { x: 0 },
-              colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
-            });
-            confetti({
-              particleCount: 5,
-              angle: 120,
-              spread: 55,
-              origin: { x: 1 },
-              colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
-            });
-    
-            if (Date.now() < end) {
-              requestAnimationFrame(frame);
-            }
-          };
-          frame();
-        };
-    
-        triggerConfetti();
-        const interval = setInterval(triggerConfetti, 4000); // 2s duration, 4s interval = 2s gap
-    
-        return () => clearInterval(interval);
-      }, []);
+    function CongratsScreen({ user, myElement, isMuted }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air', isMuted: boolean }) {
+  const router = useRouter();
+
+  const isMutedRef = useRef(isMuted);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  useEffect(() => {
+    const audio = new Audio('/Fireworks.mp3');
+    audio.volume = 0.5;
+
+    // Fire Confetti in a loop
+    const triggerConfetti = () => {
+      if (!isMutedRef.current) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log("Audio play blocked:", e));
+      }
+
+      const duration = 2 * 1000;
+      const end = Date.now() + duration;
+
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
+    };
+
+    triggerConfetti();
+    const interval = setInterval(triggerConfetti, 4000); // 2s duration, 4s interval = 2s gap
+
+    return () => {
+      clearInterval(interval);
+      audio.pause();
+    };
+  }, []);
     
       const getCharacterMessage = () => {
         switch(myElement) {

@@ -19,6 +19,10 @@ export interface Session {
   timeRemaining: number; // seconds
   questions: string[]; // Discussion prompts for the current round
   isPaused?: boolean;
+  broadcastMessage?: {
+    text: string;
+    id: string; // Unique ID to trigger re-renders/animations
+  };
 }
 
 export type Group = {

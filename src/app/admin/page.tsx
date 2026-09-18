@@ -33,6 +33,7 @@ export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [newQuestion, setNewQuestion] = useState('');
+  const [broadcastText, setBroadcastText] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -263,6 +264,17 @@ export default function AdminPage() {
         await updateSession({ status: 'finished', timeRemaining: 0 });
       }
     });
+  };
+
+  const sendBroadcast = async () => {
+    if (!broadcastText.trim()) return;
+    await updateSession({
+      broadcastMessage: {
+        text: broadcastText.trim(),
+        id: Date.now().toString()
+      }
+    });
+    setBroadcastText('');
   };
 
   const addQuestion = async () => {
@@ -630,16 +642,16 @@ export default function AdminPage() {
                   </div>
                   <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => updateSession({ timeRemaining: session.timeRemaining + 30 })}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-white/5 backdrop-blur-md transition-all active:scale-95"
+                      onClick={() => updateSession({ timeRemaining: session.timeRemaining + 60 })}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-all active:scale-95"
                     >
-                      <Plus className="w-3.5 h-3.5" /> 30s
+                      <Plus className="w-3.5 h-3.5" /> 1 Min
                     </button>
                     <button
-                      onClick={() => updateSession({ timeRemaining: Math.max(0, session.timeRemaining - 30) })}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-white/5 backdrop-blur-md transition-all active:scale-95"
+                      onClick={() => updateSession({ timeRemaining: Math.max(0, session.timeRemaining - 60) })}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-all active:scale-95"
                     >
-                      <Minus className="w-3.5 h-3.5" /> 30s
+                      <Minus className="w-3.5 h-3.5" /> 1 Min
                     </button>
                     <button
                       onClick={() => updateSession({ isPaused: !session.isPaused })}
@@ -680,6 +692,31 @@ export default function AdminPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Broadcast Card */}
+            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-4 h-4 text-zinc-400" />
+                <h2 className="text-sm font-semibold text-zinc-900">Broadcast Message</h2>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={broadcastText}
+                  onChange={(e) => setBroadcastText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && sendBroadcast()}
+                  placeholder="Type an announcement to send to everyone..."
+                  className="flex-1 bg-white border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                />
+                <button
+                  onClick={sendBroadcast}
+                  disabled={!broadcastText.trim()}
+                  className="px-4 h-10 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-all disabled:opacity-30 active:scale-95 flex items-center gap-2"
+                >
+                  <MessageSquare className="w-4 h-4" /> Send
+                </button>
               </div>
             </div>
 

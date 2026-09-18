@@ -91,14 +91,21 @@ export default function LandingPage() {
     setTimeout(() => isTransitioning.current = false, 1200);
   };
 
-  // Robust video metadata loader
+  // Robust video metadata loader and global mute listener
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     
-    // Force mute to prevent double audio track mixing on mobile
-    video.muted = true;
-    video.defaultMuted = true;
+    // Listen for global mute changes from AudioPlayer
+    const handleMuteChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (video) {
+        video.muted = customEvent.detail.isMuted;
+      }
+    };
+    window.addEventListener('globalMuteChange', handleMuteChange);
+    
+    // We initialize as unmuted (or muted depending on how the browser reacts, but React's muted={false} is set)
     
     const onReady = () => setDuration(video.duration);
     video.addEventListener('loadedmetadata', onReady);
@@ -106,7 +113,10 @@ export default function LandingPage() {
     if (video.readyState >= 1) {
       onReady();
     }
-    return () => video.removeEventListener('loadedmetadata', onReady);
+    return () => {
+      window.removeEventListener('globalMuteChange', handleMuteChange);
+      video.removeEventListener('loadedmetadata', onReady);
+    };
   }, [videoSrc]);
 
   // Wheel Event to change steps (Full Page Scroll)
@@ -216,7 +226,7 @@ export default function LandingPage() {
           src={videoSrc}
           className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
-          muted={true}
+          muted={false}
           preload="auto"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />

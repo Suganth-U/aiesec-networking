@@ -6,63 +6,56 @@ import { usePathname } from 'next/navigation';
 
 export default function AudioPlayer() {
   const pathname = usePathname();
-  const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const clickAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Hide the music toggle button and mute music on admin page
+  const isLandingPage = pathname === '/';
   const isHidden = pathname?.startsWith('/admin');
+
+  // We use isGlobalMuted to track the user's preference across the app.
+  // We initialize to true initially to comply with autoplay policies, 
+  // but if they interact, we can unmute. Or default to false. Let's default to false.
+  const [isGlobalMuted, setIsGlobalMuted] = useState(false);
 
   // Global Button Click Sound Effect
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Check if clicked element is a button, a link, or has role="button"
       const isClickable = target.closest('button') || target.closest('a') || target.closest('[role="button"]');
       
-      if (isClickable && clickAudioRef.current) {
-        // Reset time so rapid clicks don't get ignored
+      if (isClickable && clickAudioRef.current && !isGlobalMuted) {
         clickAudioRef.current.currentTime = 0;
-        // The click sound ignores the music's mute state
-        clickAudioRef.current.volume = 0.5; // Set a reasonable volume for clicks
-        clickAudioRef.current.play().catch(() => {
-          // Ignore autoplay restrictions for click (usually fine since it's a user interaction)
-        });
+        clickAudioRef.current.volume = 0.5;
+        clickAudioRef.current.play().catch(() => {});
       }
     };
-
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
-  }, []);
+  }, [isGlobalMuted]);
 
-  // Try to autoplay background music on mount or route change
+  // Manage Game sound.mp3 playback
   useEffect(() => {
-    if (audioRef.current && !isHidden) {
-      audioRef.current.volume = 0.3; // 30% volume so it's not too loud
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          setIsPlaying(true);
-        }).catch(() => {
-          // Auto-play prevented by browser, require user interaction
-          setIsPlaying(false);
-        });
-      }
-    } else if (audioRef.current && isHidden) {
-       audioRef.current.pause();
-       setIsPlaying(false);
+    if (!audioRef.current) return;
+    
+    // We only play Game sound.mp3 if NOT on landing page, NOT admin, and NOT muted
+    if (!isLandingPage && !isHidden && !isGlobalMuted) {
+      audioRef.current.volume = 0.3;
+      audioRef.current.play().catch(() => {
+        // Autoplay failed, fallback to muted state
+        setIsGlobalMuted(true);
+      });
+    } else {
+      audioRef.current.pause();
     }
-  }, [isHidden, pathname]);
+  }, [isLandingPage, isHidden, isGlobalMuted]);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
+  // Sync global mute state with window for other components (like video in page.tsx)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('globalMuteChange', { detail: { isMuted: isGlobalMuted } }));
+  }, [isGlobalMuted]);
+
+  const toggleMute = () => {
+    setIsGlobalMuted(prev => !prev);
   };
 
   return (
@@ -72,11 +65,11 @@ export default function AudioPlayer() {
       
       {!isHidden && (
         <button
-          onClick={togglePlay}
+          onClick={toggleMute}
           className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl border border-white/20 shadow-xl flex items-center justify-center text-white/80 hover:text-white hover:bg-black/60 hover:scale-110 transition-all"
-          title="Toggle Music"
+          title={isGlobalMuted ? "Unmute Sound" : "Mute Sound"}
         >
-          {isPlaying ? <Volume2 size={24} /> : <VolumeX size={24} />}
+          {isGlobalMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
         </button>
       )}
     </>

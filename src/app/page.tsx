@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Volume2, VolumeX } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 const CHAPTERS = [
@@ -80,7 +80,7 @@ export default function LandingPage() {
   }, []);
   const [currentStep, setCurrentStep] = useState(0);
   const [visibleStep, setVisibleStep] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+
   const isTransitioning = useRef(false);
 
   const handleDotClick = (index: number) => {
@@ -212,19 +212,11 @@ export default function LandingPage() {
           src={videoSrc}
           className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
-          muted={isMuted}
+          muted={true}
           preload="auto"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />
       </div>
-
-      {/* MUTE TOGGLE */}
-      <button 
-        onClick={() => setIsMuted(!isMuted)}
-        className="absolute top-6 right-6 md:top-12 md:right-12 z-50 p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-md border border-white/10 text-white transition-all shadow-xl"
-      >
-        {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-      </button>
 
       {/* DYNAMIC TEXT LAYER */}
       <div className="absolute inset-0 z-10 pointer-events-none p-8 md:p-16">

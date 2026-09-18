@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Session, User } from '@/types';
-import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle, Download } from 'lucide-react';
 import { GROUPS, MATCHMAKING_MATRIX } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 
@@ -319,7 +319,7 @@ export default function AdminPage() {
   // ══════════════════════════════════════
   if (!isAuthenticated) {
     return (
-      <div className="flex-1 flex items-center justify-center p-4 bg-white text-zinc-900">
+      <div className="flex-1 flex items-center justify-center p-4 bg-white text-zinc-900" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-900 flex items-center justify-center mb-4">
@@ -449,6 +449,46 @@ export default function AdminPage() {
   );
 
   // ══════════════════════════════════════
+
+  const kickUser = (userId: string, userName: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Kick Participant',
+      message: `Are you sure you want to kick ${userName}? They will be forcefully logged out and removed from the event.`,
+      actionText: 'Kick User',
+      actionStyle: 'danger',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'users', userId));
+        } catch (err) {
+          console.error(err);
+        }
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  };
+
+
+  const exportDataToCSV = () => {
+    if (!users.length) return;
+    const headers = ['Name', 'Front Office', 'Role', 'Status', 'Matches (Count)'];
+    const rows = users.map(u => [
+      u.name,
+      u.frontOffice,
+      u.role,
+      u.status,
+      u.metUsers.length
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `AIESEC_Event_Data_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // CONFIRM MODAL
   // ══════════════════════════════════════
   const confirmModal = confirmConfig.isOpen && (
@@ -529,9 +569,14 @@ export default function AdminPage() {
             selectedGroupUsers.map(u => (
               <div key={u.id} className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-800">{u.name}</span>
-                <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : u.status === 'finished_round' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-200 text-zinc-600'}`}>
-                  {u.status.replace('_', ' ')}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-md ${u.status === 'active' ? 'bg-emerald-100 text-emerald-700' : u.status === 'finished_round' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-200 text-zinc-600'}`}>
+                    {u.status.replace('_', ' ')}
+                  </span>
+                  <button onClick={() => kickUser(u.id, u.name)} className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Kick User">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             ))
           ) : (
@@ -547,7 +592,7 @@ export default function AdminPage() {
   // Loading
   if (!session) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white text-zinc-900">
+      <div className="flex-1 flex items-center justify-center bg-white text-zinc-900" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <div className="w-6 h-6 rounded-full border-2 border-zinc-300 border-t-zinc-900 animate-spin" />
       </div>
     );
@@ -568,7 +613,7 @@ export default function AdminPage() {
   // ADMIN DASHBOARD
   // ══════════════════════════════════════
   return (
-    <div className="flex-1 bg-white text-zinc-900 p-4 sm:p-8">
+    <div className="flex-1 bg-white text-zinc-900 p-4 sm:p-8" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {changePasswordModal}
       {confirmModal}
       {groupUsersModal}
@@ -815,6 +860,13 @@ export default function AdminPage() {
                   <h2 className="text-sm font-semibold text-zinc-900">Attendance</h2>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button
+                    onClick={exportDataToCSV}
+                    className="px-3 py-1.5 text-xs font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 rounded-lg transition-all active:scale-95 flex items-center gap-1.5"
+                    title="Export Attendance to CSV"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Export
+                  </button>
                   <button
                     onClick={clearAllParticipants}
                     className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-all active:scale-95"

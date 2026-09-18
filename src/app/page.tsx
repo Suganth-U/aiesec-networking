@@ -96,9 +96,9 @@ export default function LandingPage() {
     const video = videoRef.current;
     if (!video) return;
     
-    // Force mute to prevent double audio track mixing on mobile
-    video.muted = true;
-    video.defaultMuted = true;
+    // Ensure video is unmuted so its native audio plays on scroll
+    video.muted = false;
+    video.defaultMuted = false;
     
     const onReady = () => setDuration(video.duration);
     video.addEventListener('loadedmetadata', onReady);
@@ -216,7 +216,7 @@ export default function LandingPage() {
           src={videoSrc}
           className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
-          muted={true}
+          muted={false}
           preload="auto"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(0,0,0,0.6)_100%)]" />

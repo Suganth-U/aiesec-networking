@@ -10,19 +10,19 @@ import { VT323 } from 'next/font/google';
 import localFont from 'next/font/local';
 
 const rogenz = localFont({
-  src: '../../public/fonts/rogenz-demo/ROGENZ (DEMO).ttf',
+  src: '../../public/Fonts/rogenz-demo/ROGENZ (DEMO).ttf',
   variable: '--font-cinzel', // Replacing Cinzel with Rogenz for headings
 });
 
 const audex = localFont({
   src: [
     {
-      path: '../../public/fonts/audex/Audex-Regular.ttf',
+      path: '../../public/Fonts/audex/Audex-Regular.ttf',
       weight: '400',
       style: 'normal',
     },
     {
-      path: '../../public/fonts/audex/Audex-Italic.ttf',
+      path: '../../public/Fonts/audex/Audex-Italic.ttf',
       weight: '400',
       style: 'italic',
     },

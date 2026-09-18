@@ -119,59 +119,21 @@ export default function LandingPage() {
     };
   }, [videoSrc]);
 
-  // Wheel Event to change steps (Full Page Scroll)
+  // Auto-advance chapters with a time interval
   useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      // Ignore tiny trackpad scrolls
-      if (Math.abs(e.deltaY) < 30) return;
-      if (isTransitioning.current) return;
+    // Only auto-advance if we are not at the CTA slide
+    if (currentStep >= CHAPTERS.length - 1) return;
 
-      if (e.deltaY > 0 && currentStep < CHAPTERS.length - 1) {
-        isTransitioning.current = true;
-        setVisibleStep(-1); // Hide text immediately
-        setCurrentStep(s => s + 1);
-        setTimeout(() => isTransitioning.current = false, 1200); // Cooldown to prevent double-scroll
-      } else if (e.deltaY < 0 && currentStep > 0) {
-        isTransitioning.current = true;
-        setVisibleStep(-1); // Hide text immediately
-        setCurrentStep(s => s - 1);
-        setTimeout(() => isTransitioning.current = false, 1200);
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel);
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [currentStep]);
-
-  // Handle Touch/Swipe on mobile
-  useEffect(() => {
-    let touchStartY = 0;
-    const handleTouchStart = (e: TouchEvent) => touchStartY = e.touches[0].clientY;
-    const handleTouchEnd = (e: TouchEvent) => {
-      const touchEndY = e.changedTouches[0].clientY;
-      const delta = touchStartY - touchEndY;
-      
-      if (Math.abs(delta) < 50 || isTransitioning.current) return;
-      
-      if (delta > 0 && currentStep < CHAPTERS.length - 1) {
+    const timer = setInterval(() => {
+      if (!isTransitioning.current) {
         isTransitioning.current = true;
         setVisibleStep(-1);
         setCurrentStep(s => s + 1);
         setTimeout(() => isTransitioning.current = false, 1200);
-      } else if (delta < 0 && currentStep > 0) {
-        isTransitioning.current = true;
-        setVisibleStep(-1);
-        setCurrentStep(s => s - 1);
-        setTimeout(() => isTransitioning.current = false, 1200);
       }
-    };
+    }, 6000); // 6 seconds per slide
 
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchend', handleTouchEnd);
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
-    };
+    return () => clearInterval(timer);
   }, [currentStep]);
 
   // Play video segments triggered by step change

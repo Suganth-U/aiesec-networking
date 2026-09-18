@@ -936,7 +936,7 @@ export default function AdminPage() {
                 {progressPercent === 100 ? 'All participants done!' : `${Math.round(progressPercent)}% complete`}
               </p>
             </div>
-\n            {/* Live Match Matrix */}
+            {/* Live Match Matrix */}
             <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ArrowRightLeft className="w-4 h-4 text-zinc-400" />
@@ -949,18 +949,28 @@ export default function AdminPage() {
                   const u1Count = users.filter(u => u.frontOffice === g1?.name.split(' - ')[0] && u.role === g1?.name.split(' - ')[1]).length;
                   const u2Count = users.filter(u => u.frontOffice === g2?.name.split(' - ')[0] && u.role === g2?.name.split(' - ')[1]).length;
                   
+                  const c1 = g1 ? getGroupColor(g1.color) : { bg: 'bg-zinc-100', text: 'text-zinc-800', border: 'border-zinc-200', dot: 'bg-zinc-400' };
+                  const c2 = g2 ? getGroupColor(g2.color) : { bg: 'bg-zinc-100', text: 'text-zinc-800', border: 'border-zinc-200', dot: 'bg-zinc-400' };
+                  
                   return (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                      <div className="text-center w-[45%]">
-                        <span className="text-xs font-bold text-zinc-800 block">{g1?.name}</span>
-                        <span className="text-[10px] text-zinc-500">{u1Count} users</span>
+                    <div key={idx} className="flex items-stretch justify-between p-1.5 rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden relative">
+                      {/* Left Side (G1) */}
+                      <div className={`w-[45%] flex flex-col items-center justify-center py-3 px-1 rounded-lg ${c1.bg} ${c1.border} border bg-opacity-30`}>
+                        <span className={`text-xs font-bold ${c1.text} text-center leading-tight`}>{g1?.name}</span>
+                        <span className={`text-[10px] ${c1.text} opacity-80 mt-1 font-mono bg-white/50 px-2 rounded-md`}>{u1Count} users</span>
                       </div>
-                      <div className="w-[10%] flex justify-center">
-                        <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-400" />
+                      
+                      {/* Center */}
+                      <div className="w-[10%] flex flex-col justify-center items-center relative z-10 shrink-0">
+                         <div className="bg-zinc-900 rounded-full p-1.5 shadow-sm border-2 border-white absolute">
+                           <Zap className="w-3 h-3 text-amber-400" />
+                         </div>
                       </div>
-                      <div className="text-center w-[45%]">
-                        <span className="text-xs font-bold text-zinc-800 block">{g2?.name}</span>
-                        <span className="text-[10px] text-zinc-500">{u2Count} users</span>
+                      
+                      {/* Right Side (G2) */}
+                      <div className={`w-[45%] flex flex-col items-center justify-center py-3 px-1 rounded-lg ${c2.bg} ${c2.border} border bg-opacity-30`}>
+                        <span className={`text-xs font-bold ${c2.text} text-center leading-tight`}>{g2?.name}</span>
+                        <span className={`text-[10px] ${c2.text} opacity-80 mt-1 font-mono bg-white/50 px-2 rounded-md`}>{u2Count} users</span>
                       </div>
                     </div>
                   );
@@ -968,7 +978,8 @@ export default function AdminPage() {
                   <div className="text-center py-4 text-sm text-zinc-500">Event Finished.</div>
                 )}
               </div>
-            </div>\n          </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

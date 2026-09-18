@@ -15,7 +15,7 @@ export default function AudioPlayer() {
   // We use isGlobalMuted to track the user's preference across the app.
   // We initialize to true initially to comply with autoplay policies, 
   // but if they interact, we can unmute. Or default to false. Let's default to false.
-  const [isGlobalMuted, setIsGlobalMuted] = useState(false);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
 
   // Global Button Click Sound Effect
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function AudioPlayer() {
       const target = e.target as HTMLElement;
       const isClickable = target.closest('button') || target.closest('a') || target.closest('[role="button"]');
       
-      if (isClickable && clickAudioRef.current && !isGlobalMuted) {
+      if (isClickable && clickAudioRef.current) {
         clickAudioRef.current.currentTime = 0;
         clickAudioRef.current.volume = 0.5;
         clickAudioRef.current.play().catch(() => {});

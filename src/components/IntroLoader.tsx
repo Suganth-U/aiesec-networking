@@ -32,43 +32,67 @@ export default function IntroLoader() {
     let isCancelled = false;
 
     const loadAsset = (url: string) => {
-      return new Promise<void>((resolve, reject) => {
-        const req = new XMLHttpRequest();
-        req.open('GET', url, true);
-        req.responseType = 'blob';
+      return new Promise<void>((resolve) => {
+        if (url.endsWith('.mp4')) {
+          const vid = document.createElement('video');
+          vid.src = url;
+          vid.preload = 'auto';
+          vid.muted = true;
+          vid.playsInline = true;
+          // canplaythrough means browser has buffered enough to play smoothly
+          vid.oncanplaythrough = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+          vid.onerror = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+          // Fallback timer just in case it stalls
+          setTimeout(() => { progressMap.set(url, 1); resolve(); }, 8000);
+        } else if (url.endsWith('.png') || url.endsWith('.jpg')) {
+          const img = new Image();
+          img.src = url;
+          img.onload = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+          img.onerror = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+        } else if (url.endsWith('.mp3')) {
+          const aud = new Audio();
+          aud.src = url;
+          aud.oncanplaythrough = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+          aud.onerror = () => {
+            progressMap.set(url, 1);
+            resolve();
+          };
+          setTimeout(() => { progressMap.set(url, 1); resolve(); }, 5000);
+        } else {
+          progressMap.set(url, 1);
+          resolve();
+        }
 
-        req.onprogress = (event) => {
-          if (isCancelled) return;
-          if (event.lengthComputable) {
-            progressMap.set(url, event.loaded / event.total);
-          } else {
-            // Rough fallback if total size is unknown
-            progressMap.set(url, 0.5);
+        // Simulate progress updates for UI
+        let fakeProgress = 0;
+        const interval = setInterval(() => {
+          if (isCancelled || fakeProgress >= 0.9) {
+            clearInterval(interval);
+            return;
           }
+          fakeProgress += 0.1;
+          progressMap.set(url, fakeProgress);
           
-          // Calculate overall progress
           let totalProgress = 0;
           progressMap.forEach((val) => totalProgress += val);
           const overall = (totalProgress / assets.length) * 100;
           setProgress(Math.min(overall, 99));
-        };
-
-        req.onload = () => {
-          if (req.status === 200 || req.status === 304) {
-            progressMap.set(url, 1);
-            resolve();
-          } else {
-            progressMap.set(url, 1); // Skip on error so we don't hang
-            resolve();
-          }
-        };
-
-        req.onerror = () => {
-          progressMap.set(url, 1); // Skip on error
-          resolve();
-        };
-
-        req.send();
+        }, 300);
       });
     };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function AnimatedBackground() {
@@ -11,10 +12,12 @@ export default function AnimatedBackground() {
 
   return (
     <div className="fixed inset-0 pointer-events-none -z-10">
-      <picture>
-        <source media="(min-width: 768px)" srcSet="/desktop-bg.png" />
-        <img src="/mobile-bg.png" alt="Background" className="w-full h-full object-cover" />
-      </picture>
+      <div className="hidden md:block absolute inset-0 w-full h-full">
+        <Image src="/desktop-bg.png" alt="Desktop Background" fill className="object-cover" priority quality={60} />
+      </div>
+      <div className="block md:hidden absolute inset-0 w-full h-full">
+        <Image src="/mobile-bg.png" alt="Mobile Background" fill className="object-cover" priority quality={60} />
+      </div>
       <div className="absolute inset-0 bg-black/30" />
     </div>
   );

@@ -129,7 +129,7 @@ export default function JoinPage() {
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-60"
+          className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-60"
         />
         <div className="absolute inset-0 bg-black/50" />
       </div>

@@ -201,7 +201,7 @@ export default function LandingPage() {
         <video
           ref={videoRef}
           src={videoSrc}
-          className="w-full h-full object-cover opacity-80"
+          className="absolute top-1/2 left-1/2 w-full h-full -translate-x-1/2 -translate-y-1/2 object-cover object-center scale-[1.15] md:scale-100 opacity-80"
           playsInline
           preload="auto"
         />

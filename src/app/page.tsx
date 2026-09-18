@@ -84,19 +84,10 @@ export default function LandingPage() {
   const isTransitioning = useRef(false);
 
   const handleDotClick = (index: number) => {
-    if (index === currentStep || isTransitioning.current) return;
+    if (isTransitioning.current || index === currentStep) return;
     isTransitioning.current = true;
     setVisibleStep(-1);
     setCurrentStep(index);
-    
-    // Also seek the video!
-    if (videoRef.current) {
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
-      let t = isMobile ? CHAPTERS[index].mobileTime : CHAPTERS[index].pcTime;
-      if (t === 999) t = (videoRef.current.duration || 10) - 0.5;
-      videoRef.current.currentTime = t;
-    }
-    
     setTimeout(() => isTransitioning.current = false, 1200);
   };
 

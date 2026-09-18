@@ -275,7 +275,7 @@ export default function AdminPage() {
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        await updateSession({ status: 'ended', timeRemaining: 0 });
+        await updateSession({ status: 'ended', timeRemaining: 0, currentRound: 0 });
       }
     });
   };

@@ -219,20 +219,20 @@ export default function LandingPage() {
                     </p>
                   </>
                 ) : (
-                  <div className="text-center w-full max-w-lg mx-auto px-6">
-                    <p className="text-white/60 font-game tracking-[0.4em] text-sm uppercase mb-6 [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">{chapter.eyebrow}</p>
+                  <div className="text-center w-full max-w-lg mx-auto px-4 md:px-6">
+                    <p className="text-white/60 font-game tracking-[0.4em] text-base md:text-lg uppercase mb-6 [text-shadow:_0_2px_10px_rgb(0_0_0_/_80%)]">{chapter.eyebrow}</p>
                     <h1 className="text-5xl md:text-7xl font-cinzel font-bold tracking-[0.15em] text-white mb-10 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] [text-shadow:_0_4px_20px_rgb(0_0_0_/_100%)]">
                       {chapter.title}
                     </h1>
                     
                     <Link
                       href="/join"
-                      className="group relative inline-flex px-10 py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-full font-cinzel tracking-[0.2em] text-sm uppercase text-white transition-all overflow-hidden"
+                      className="group relative inline-flex px-6 py-4 md:px-10 md:py-5 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 rounded-full font-cinzel tracking-[0.15em] md:tracking-[0.2em] text-sm sm:text-base md:text-lg uppercase text-white transition-all overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-out" />
-                      <span className="relative flex items-center gap-4 group-hover:text-black transition-colors duration-500">
+                      <span className="relative flex items-center gap-3 md:gap-4 group-hover:text-black transition-colors duration-500 text-center">
                         Start Something Unfinished
-                        <Play className="w-4 h-4 fill-transparent group-hover:fill-black transition-colors duration-500" />
+                        <Play className="w-4 h-4 md:w-5 md:h-5 fill-transparent group-hover:fill-black transition-colors duration-500" />
                       </span>
                     </Link>
                   </div>

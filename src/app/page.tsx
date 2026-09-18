@@ -96,6 +96,10 @@ export default function LandingPage() {
     const video = videoRef.current;
     if (!video) return;
     
+    // Force mute to prevent double audio track mixing on mobile
+    video.muted = true;
+    video.defaultMuted = true;
+    
     const onReady = () => setDuration(video.duration);
     video.addEventListener('loadedmetadata', onReady);
     

@@ -150,14 +150,14 @@ export default function NetworkPage() {
 
   const myGroup = getGroupById(myGroupId);
   const myColors = myGroup ? getGroupColor(myGroup.color) : getGroupColor('Black');
-  const myFO = myGroup?.name.split(' - ')[0] || 'iGT';
+  const myFO = myGroup?.name?.split(' - ')[0] || 'iGT';
   const myElement = FO_TO_ELEMENT[myFO] || 'water';
   const myNation = FO_TO_NATION[myFO] || 'Water Tribe';
 
   const targetGroupId = session.currentRound < TOTAL_ROUNDS ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
   const targetGroup = targetGroupId ? getGroupById(targetGroupId) : null;
   const targetColors = targetGroup ? getGroupColor(targetGroup.color) : null;
-  const targetFO = targetGroup?.name.split(' - ')[0] || 'iGT';
+  const targetFO = targetGroup?.name?.split(' - ')[0] || 'iGT';
   const targetElement = FO_TO_ELEMENT[targetFO] || 'water';
   const targetNation = FO_TO_NATION[targetFO] || 'Water Tribe';
 
@@ -187,7 +187,7 @@ export default function NetworkPage() {
                 <p className="text-xs text-white/40 uppercase tracking-wider font-semibold mb-2">You are</p>
                 <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border text-sm font-bold ${myColors.badge}`}>
                   <div className={`w-3.5 h-3.5 rounded-full ${myColors.dot}`} />
-                  {myNation} · {myGroup?.name.split(' - ')[1]}
+                  {myNation} · {myGroup?.name?.split(' - ')[1]}
                 </div>
               </div>
               <p className="text-xs text-white/30">Welcome, {user.name}</p>
@@ -253,7 +253,7 @@ export default function NetworkPage() {
         <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 mb-3">
           <div className="flex items-center gap-2">
             <div className={`w-2.5 h-2.5 rounded-full ${myColors.dot}`} />
-            <span className="text-xs font-semibold text-white/50">{myNation} · <span className="text-white">{myGroup?.name.split(' - ')[1]}</span></span>
+            <span className="text-xs font-semibold text-white/50">{myNation} · <span className="text-white">{myGroup?.name?.split(' - ')[1]}</span></span>
           </div>
           <span className="text-xs text-white/30">{user.name}</span>
         </div>
@@ -343,7 +343,7 @@ export default function NetworkPage() {
               >
                 <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 font-semibold mb-1">You</p>
                 <p className="text-sm sm:text-base font-black text-white">{myNation}</p>
-                <p className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-wide">{myGroup?.name.split(' - ')[1]}</p>
+                <p className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-wide">{myGroup?.name?.split(' - ')[1]}</p>
               </motion.div>
 
               <div className="w-px" />
@@ -356,7 +356,7 @@ export default function NetworkPage() {
               >
                 <p className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-400/80 font-semibold mb-1">Find</p>
                 <p className="text-sm sm:text-base font-black text-amber-300">{targetNation}</p>
-                <p className="text-2xl sm:text-3xl font-black text-white uppercase tracking-widest drop-shadow-lg">{targetGroup?.name.split(' - ')[1]}</p>
+                <p className="text-2xl sm:text-3xl font-black text-white uppercase tracking-widest drop-shadow-lg">{targetGroup?.name?.split(' - ')[1]}</p>
               </motion.div>
             </div>
 

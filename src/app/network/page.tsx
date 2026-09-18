@@ -425,31 +425,38 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
   const router = useRouter();
 
   useEffect(() => {
-    // Fire Confetti!
-    const duration = 3 * 1000;
-    const end = Date.now() + duration;
+    // Fire Confetti in a loop
+    const triggerConfetti = () => {
+      const duration = 2 * 1000;
+      const end = Date.now() + duration;
 
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
-      });
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#EF4444', '#3B82F6', '#22C55E', '#F97316']
+        });
 
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      };
+      frame();
     };
-    frame();
+
+    triggerConfetti();
+    const interval = setInterval(triggerConfetti, 4000); // 2s duration, 4s interval = 2s gap
+
+    return () => clearInterval(interval);
   }, []);
 
   const getCharacterMessage = () => {
@@ -474,8 +481,8 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden w-full min-h-screen">
       {/* Blurred Browser Background Image */}
-      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-xl opacity-60 scale-110 bg-[url('/mobile-bg.png')] md:bg-[url('/desktop-bg.png')]" />
-      <div className="absolute inset-0 bg-black/60 z-0" />
+      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-sm opacity-90 scale-105 bg-[url('/mobile-bg.png')] md:bg-[url('/desktop-bg.png')]" />
+      <div className="absolute inset-0 bg-black/40 z-0" />
 
       <motion.div 
         initial={{ opacity: 0, y: 50, scale: 0.9 }} 
@@ -514,7 +521,7 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
               transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
             />
             
-            <div className="relative z-20 p-8 pt-10 md:p-12 md:pt-14 text-center">
+            <div className="relative z-20 p-8 pt-10 md:p-12 md:pt-12 text-center">
               <motion.h2 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -528,11 +535,13 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.5 }}
-                className="space-y-4 text-sm md:text-base text-white/80 font-noto font-light leading-relaxed max-w-xs mx-auto"
+                className="space-y-4 text-sm md:text-base text-white/90 font-noto font-light leading-relaxed max-w-sm mx-auto"
               >
-                <p>You have successfully completed all four rounds.</p>
-                <p className="font-bold text-white pt-3 border-t border-white/20">
-                  Welcome to the unified network, {user.name}.
+                <p>
+                  You've successfully journeyed through all four nations! Your willingness to step out of your comfort zone, share your thoughts, and connect with others is what makes this event incredible.
+                </p>
+                <p className="font-bold text-white pt-4 border-t border-white/20">
+                  Welcome to the unified network, {user.name}!
                 </p>
               </motion.div>
 

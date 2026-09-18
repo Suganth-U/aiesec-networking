@@ -422,6 +422,8 @@ export default function NetworkPage() {
 }
 
 function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 'earth' | 'fire' | 'air' }) {
+  const router = useRouter();
+
   useEffect(() => {
     // Fire Confetti!
     const duration = 3 * 1000;
@@ -460,42 +462,58 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
     }
   };
 
+  const handleRestart = () => {
+    localStorage.removeItem('aiesec-uid');
+    router.push('/');
+  };
+
+  const handleExit = () => {
+    router.push('/');
+  };
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden w-full min-h-screen">
+      {/* Blurred Background Image */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat blur-2xl opacity-40 scale-110" 
+        style={{ backgroundImage: `url(/${myElement}-bg.jpg)` }} 
+      />
+      <div className="absolute inset-0 bg-black/50 z-0" />
+
       <motion.div 
         initial={{ opacity: 0, y: 50, scale: 0.9 }} 
         animate={{ opacity: 1, y: 0, scale: 1 }} 
         transition={{ type: 'spring', bounce: 0.5, duration: 1 }}
-        className="w-full max-w-lg z-10"
+        className="w-full max-w-md z-10 my-auto"
       >
-        <div className="relative">
+        <div className="relative mt-12">
           {/* Tooltip Message */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ delay: 1, type: 'spring' }}
-            className="absolute -top-16 md:-top-20 -right-4 md:-right-8 bg-white text-black p-4 rounded-2xl rounded-bl-sm font-cinzel font-bold shadow-2xl z-20 max-w-[200px]"
+            className="absolute -top-16 md:-top-20 -right-2 md:-right-6 bg-white text-black p-4 rounded-2xl rounded-bl-sm font-cinzel font-bold shadow-2xl z-30 max-w-[200px] text-sm md:text-base"
           >
             {getCharacterMessage()}
           </motion.div>
 
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 md:p-12 text-center shadow-[0_0_50px_rgba(255,255,255,0.1)] relative overflow-hidden">
+          <div className="bg-zinc-900/60 backdrop-blur-xl rounded-3xl border border-white/20 p-8 pt-24 md:p-12 md:pt-32 text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-visible mt-20">
             {/* Shimmer Effect */}
             <motion.div 
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 rounded-3xl pointer-events-none"
               animate={{ x: ['-200%', '200%'] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
             />
             
-            <div className="flex justify-center mb-6 relative z-10 h-[150px]">
-              <AvatarCharacter element={myElement} className="scale-150 transform-origin-bottom" />
+            <div className="absolute -top-32 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+              <AvatarCharacter element={myElement} className="scale-110 md:scale-125" />
             </div>
 
             <motion.h2 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="text-4xl md:text-5xl font-cinzel font-bold text-white mb-4 tracking-wider"
+              className="text-4xl md:text-5xl font-cinzel font-bold text-white mb-4 tracking-wider mt-4"
             >
               HURRAY!
             </motion.h2>
@@ -504,12 +522,33 @@ function CongratsScreen({ user, myElement }: { user: User; myElement: 'water' | 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.5 }}
-              className="space-y-3 text-sm md:text-base text-white/80 font-noto font-light leading-relaxed max-w-xs mx-auto"
+              className="space-y-4 text-sm md:text-base text-white/80 font-noto font-light leading-relaxed max-w-xs mx-auto"
             >
               <p>You have successfully completed all four rounds.</p>
-              <p className="font-bold text-white pt-2 border-t border-white/20">
+              <p className="font-bold text-white pt-3 border-t border-white/20">
                 Welcome to the unified network, {user.name}.
               </p>
+            </motion.div>
+
+            {/* Action Buttons */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 2.5 }}
+              className="mt-8 flex flex-col gap-3"
+            >
+              <button 
+                onClick={handleRestart}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98] shadow-lg"
+              >
+                Restart Journey
+              </button>
+              <button 
+                onClick={handleExit}
+                className="w-full bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98]"
+              >
+                Exit Game
+              </button>
             </motion.div>
           </div>
         </div>

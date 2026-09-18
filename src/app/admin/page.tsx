@@ -953,24 +953,24 @@ export default function AdminPage() {
                   const c2 = g2 ? getGroupColor(g2.color) : { bg: 'bg-zinc-100', text: 'text-zinc-800', border: 'border-zinc-200', dot: 'bg-zinc-400' };
                   
                   return (
-                    <div key={idx} className="flex items-stretch justify-between p-1.5 rounded-xl border border-zinc-100 bg-white shadow-sm overflow-hidden relative">
+                    <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100 relative overflow-hidden">
                       {/* Left Side (G1) */}
-                      <div className={`w-[45%] flex flex-col items-center justify-center py-3 px-1 rounded-lg ${c1.bg} ${c1.border} border bg-opacity-30`}>
-                        <span className={`text-xs font-bold ${c1.text} text-center leading-tight`}>{g1?.name}</span>
-                        <span className={`text-[10px] ${c1.text} opacity-80 mt-1 font-mono bg-white/50 px-2 rounded-md`}>{u1Count} users</span>
+                      <div className="text-center w-[40%]">
+                        <span className="text-xs font-bold text-zinc-800 block">{g1?.name}</span>
+                        <span className="text-[10px] text-zinc-500">{u1Count} users</span>
                       </div>
                       
                       {/* Center */}
-                      <div className="w-[10%] flex flex-col justify-center items-center relative z-10 shrink-0">
-                         <div className="bg-zinc-900 rounded-full p-1.5 shadow-sm border-2 border-white absolute">
-                           <Zap className="w-3 h-3 text-amber-400" />
+                      <div className="w-[20%] flex justify-center items-center relative z-10 shrink-0">
+                         <div className="bg-white rounded-full p-1.5 shadow-sm border border-zinc-100">
+                           <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-400" />
                          </div>
                       </div>
                       
                       {/* Right Side (G2) */}
-                      <div className={`w-[45%] flex flex-col items-center justify-center py-3 px-1 rounded-lg ${c2.bg} ${c2.border} border bg-opacity-30`}>
-                        <span className={`text-xs font-bold ${c2.text} text-center leading-tight`}>{g2?.name}</span>
-                        <span className={`text-[10px] ${c2.text} opacity-80 mt-1 font-mono bg-white/50 px-2 rounded-md`}>{u2Count} users</span>
+                      <div className="text-center w-[40%]">
+                        <span className="text-xs font-bold text-zinc-800 block">{g2?.name}</span>
+                        <span className="text-[10px] text-zinc-500">{u2Count} users</span>
                       </div>
                     </div>
                   );

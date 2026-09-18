@@ -11,10 +11,30 @@ export default function AudioPlayer() {
 
   const isHidden = pathname?.startsWith('/admin');
 
-  // We use isGlobalMuted to track the user's preference across the app.
-  // We initialize to true initially to comply with autoplay policies, 
-  // but if they interact, we can unmute. Or default to false. Let's default to false.
-  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+  // We initialize isGlobalMuted to false so it plays by default.
+  // However, browsers block autoplay until the user interacts with the page.
+  const [isGlobalMuted, setIsGlobalMuted] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Listen for the very first user interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      setHasInteracted(true);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+    
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+    window.addEventListener('touchstart', handleFirstInteraction);
+    
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+      window.removeEventListener('touchstart', handleFirstInteraction);
+    };
+  }, []);
 
   // Global Button Click Sound Effect
   useEffect(() => {
@@ -22,7 +42,7 @@ export default function AudioPlayer() {
       const target = e.target as HTMLElement;
       const isClickable = target.closest('button') || target.closest('a') || target.closest('[role="button"]');
       
-      if (isClickable && clickAudioRef.current) {
+      if (isClickable && clickAudioRef.current && !isGlobalMuted) {
         clickAudioRef.current.currentTime = 0;
         clickAudioRef.current.volume = 0.5;
         clickAudioRef.current.play().catch(() => {});
@@ -36,17 +56,17 @@ export default function AudioPlayer() {
   useEffect(() => {
     if (!audioRef.current) return;
     
-    // We play Game sound.mp3 everywhere EXCEPT admin page, and ONLY if NOT muted
-    if (!isHidden && !isGlobalMuted) {
+    // We play Game sound.mp3 everywhere EXCEPT admin page, and ONLY if NOT muted AND user has interacted
+    if (!isHidden && !isGlobalMuted && hasInteracted) {
       audioRef.current.volume = 0.3;
       audioRef.current.play().catch(() => {
-        // Autoplay failed, fallback to muted state
+        // Autoplay failed even after interaction, fallback to muted state
         setIsGlobalMuted(true);
       });
     } else {
       audioRef.current.pause();
     }
-  }, [isHidden, isGlobalMuted]);
+  }, [isHidden, isGlobalMuted, hasInteracted]);
 
   // Sync global mute state with window for other components (like video in page.tsx)
   useEffect(() => {

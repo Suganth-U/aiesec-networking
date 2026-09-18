@@ -6,10 +6,30 @@ import SceneCanvasWrapper from '@/components/3d/SceneCanvasWrapper';
 
 import IntroLoader from '@/components/IntroLoader';
 
-import { Cinzel, Noto_Sans, VT323 } from 'next/font/google';
+import { VT323 } from 'next/font/google';
+import localFont from 'next/font/local';
 
-const cinzel = Cinzel({ subsets: ['latin'], variable: '--font-cinzel' });
-const notoSans = Noto_Sans({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-noto' });
+const rogenz = localFont({
+  src: '../../public/fonts/rogenz-demo/ROGENZ (DEMO).ttf',
+  variable: '--font-cinzel', // Replacing Cinzel with Rogenz for headings
+});
+
+const audex = localFont({
+  src: [
+    {
+      path: '../../public/fonts/audex/Audex-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../../public/fonts/audex/Audex-Italic.ttf',
+      weight: '400',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-noto', // Replacing Noto Sans with Audex for body
+});
+
 const vt323 = VT323({ subsets: ['latin'], weight: ['400'], variable: '--font-game' });
 
 export const metadata: Metadata = {
@@ -24,7 +44,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`min-h-screen flex flex-col ${notoSans.className} ${cinzel.variable} ${vt323.variable} bg-slate-950 text-white`}>
+      <body className={`min-h-screen flex flex-col ${audex.className} ${audex.variable} ${rogenz.variable} ${vt323.variable} bg-slate-950 text-white`}>
         {/* Cinematic Intro Loader */}
         <IntroLoader />
 

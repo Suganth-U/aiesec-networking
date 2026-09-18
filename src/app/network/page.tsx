@@ -94,6 +94,14 @@ export default function NetworkPage() {
     return () => { unsubUser(); unsubSession(); };
   }, [uid]);
 
+  // Handle 'ended' state kick
+  useEffect(() => {
+    if (session?.status === 'ended') {
+      localStorage.removeItem('aiesec-uid');
+      router.push('/');
+    }
+  }, [session?.status, router]);
+
   const handleFinishRound = async () => {
     if (!uid) return;
     setIsFinishing(true);
@@ -482,17 +490,7 @@ export default function NetworkPage() {
       audio.pause();
     };
   }, []);
-    
-      const getCharacterMessage = () => {
-        switch(myElement) {
-          case 'water': return "You adapted gracefully like water! Masterful networking.";
-          case 'earth': return "Solid connections! You stood your ground like a true Earthbender.";
-          case 'fire': return "You sparked amazing conversations! Your energy was fiery.";
-          case 'air': return "You found your freedom! Your networking was a breeze.";
-          default: return "You mastered the four nations of networking!";
-        }
-      };
-    
+
       const handleRestart = () => {
         localStorage.removeItem('aiesec-uid');
         router.push('/');
@@ -537,15 +535,6 @@ export default function NetworkPage() {
     
             {/* Left Area: Character */}
             <div className="relative h-[250px] md:h-auto md:w-2/5 flex items-end justify-center z-20">
-              {/* Tooltip */}
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1 }}
-                className="absolute top-2 md:top-16 left-1/2 -translate-x-1/2 md:-translate-x-0 md:-left-8 bg-white text-black p-4 rounded-2xl rounded-bl-sm font-cinzel font-bold shadow-[0_0_30px_rgba(255,255,255,0.3)] z-20 w-[220px] text-sm"
-              >
-                {getCharacterMessage()}
-              </motion.div>
 
               <div className="absolute -bottom-8 md:-bottom-10 pointer-events-none z-30">
                 <AvatarCharacter element={myElement} className="scale-125 md:scale-[1.5]" />

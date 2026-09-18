@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Session, User } from '@/types';
-import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle, Download } from 'lucide-react';
+import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle, ArrowRightLeft, Download } from 'lucide-react';
 import { GROUPS, MATCHMAKING_MATRIX } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 
@@ -262,6 +262,20 @@ export default function AdminPage() {
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         await updateSession({ status: 'finished', timeRemaining: 0 });
+      }
+    });
+  };
+
+  const endEvent = () => {
+    if (!session) return;
+    setConfirmConfig({
+      isOpen: true,
+      title: 'End Event completely',
+      message: 'Are you sure you want to end the game and kick all players back to the home screen?',
+      isDangerous: true,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        await updateSession({ status: 'ended', timeRemaining: 0 });
       }
     });
   };
@@ -715,6 +729,9 @@ export default function AdminPage() {
                     <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ {TOTAL_ROUNDS}</span></p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <button onClick={endEvent} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-semibold transition-all active:scale-[0.98]">
+                      End Game
+                    </button>
                     <button onClick={resetSession} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-semibold transition-all active:scale-[0.98]">
                       Reset
                     </button>
@@ -919,7 +936,39 @@ export default function AdminPage() {
                 {progressPercent === 100 ? 'All participants done!' : `${Math.round(progressPercent)}% complete`}
               </p>
             </div>
-          </div>
+\n            {/* Live Match Matrix */}
+            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ArrowRightLeft className="w-4 h-4 text-zinc-400" />
+                <h2 className="text-sm font-semibold text-zinc-900">Live Match Matrix</h2>
+              </div>
+              <div className="space-y-3">
+                {session.currentRound < MATCHMAKING_MATRIX.length ? MATCHMAKING_MATRIX[session.currentRound].map((pair, idx) => {
+                  const g1 = GROUPS.find(g => g.id === pair[0]);
+                  const g2 = GROUPS.find(g => g.id === pair[1]);
+                  const u1Count = users.filter(u => u.frontOffice === g1?.name.split(' - ')[0] && u.role === g1?.name.split(' - ')[1]).length;
+                  const u2Count = users.filter(u => u.frontOffice === g2?.name.split(' - ')[0] && u.role === g2?.name.split(' - ')[1]).length;
+                  
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                      <div className="text-center w-[45%]">
+                        <span className="text-xs font-bold text-zinc-800 block">{g1?.name}</span>
+                        <span className="text-[10px] text-zinc-500">{u1Count} users</span>
+                      </div>
+                      <div className="w-[10%] flex justify-center">
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-400" />
+                      </div>
+                      <div className="text-center w-[45%]">
+                        <span className="text-xs font-bold text-zinc-800 block">{g2?.name}</span>
+                        <span className="text-[10px] text-zinc-500">{u2Count} users</span>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="text-center py-4 text-sm text-zinc-500">Event Finished.</div>
+                )}
+              </div>
+            </div>\n          </div>
         </div>
       </div>
     </div>

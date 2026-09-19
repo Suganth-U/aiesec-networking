@@ -77,6 +77,7 @@ export default function IntroLoader() {
       if (isCancelled) return;
       setProgress(100);
       sessionStorage.setItem('introLoaded', 'true');
+      window.dispatchEvent(new Event('introFinished'));
       setTimeout(() => setIsVisible(false), 800);
     });
     

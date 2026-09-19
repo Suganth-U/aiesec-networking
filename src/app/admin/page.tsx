@@ -10,8 +10,6 @@ import { getGroupColor } from '@/lib/colors';
 
 const DEFAULT_PASSWORD = 'admin123';
 const DEFAULT_ROUND_TIME = 300; // 5 minutes
-const TOTAL_ROUNDS = MATCHMAKING_MATRIX.length;
-const MAX_ROUND_INDEX = TOTAL_ROUNDS - 1;
 
 export default function AdminPage() {
   // ── Auth State ──
@@ -48,6 +46,10 @@ export default function AdminPage() {
 
   // ── Group Users Modal State ──
   const [selectedGroupForModal, setSelectedGroupForModal] = useState<string | null>(null);
+
+  // ── Derived Round Config ──
+  const totalRounds = session?.totalRounds || MATCHMAKING_MATRIX.length;
+  const maxRoundIndex = totalRounds - 1;
 
   // ── Load/Initialize admin password from Firestore ──
   useEffect(() => {
@@ -169,7 +171,7 @@ export default function AdminPage() {
     const timer = setInterval(() => {
       const next = session.timeRemaining - 1;
       if (next <= 0) {
-        if (session.currentRound === MAX_ROUND_INDEX) {
+        if (session.currentRound === maxRoundIndex) {
           updateDoc(doc(db, 'sessions', 'main-event'), {
             timeRemaining: 0, status: 'finished'
           });
@@ -193,7 +195,7 @@ export default function AdminPage() {
 
   const nextRound = async () => {
     if (!session) return;
-    const nextRnd = Math.min(session.currentRound + 1, MAX_ROUND_INDEX);
+    const nextRnd = Math.min(session.currentRound + 1, maxRoundIndex);
     await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting' });
     const batch = writeBatch(db);
     users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
@@ -725,8 +727,31 @@ export default function AdminPage() {
                 {/* Round & Action */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Current Round</p>
-                    <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ {TOTAL_ROUNDS}</span></p>
+                    <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Round Control</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-3xl font-bold text-zinc-900">{session.currentRound + 1} <span className="text-lg text-zinc-300">/ {totalRounds}</span></p>
+                      
+                      {/* Total Rounds Controls */}
+                      {session.status === 'waiting' && (
+                        <div className="flex items-center gap-1 ml-2 bg-zinc-100 rounded-lg p-1">
+                          <button 
+                            onClick={() => updateSession({ totalRounds: Math.max(1, totalRounds - 1) })}
+                            className="p-1 rounded-md hover:bg-white hover:shadow-sm text-zinc-500 hover:text-zinc-900 transition-all active:scale-95"
+                            title="Decrease total rounds"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-xs font-semibold text-zinc-500 px-1">TOTAL</span>
+                          <button 
+                            onClick={() => updateSession({ totalRounds: totalRounds + 1 })}
+                            className="p-1 rounded-md hover:bg-white hover:shadow-sm text-zinc-500 hover:text-zinc-900 transition-all active:scale-95"
+                            title="Increase total rounds"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button onClick={endEvent} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 text-sm font-semibold transition-all active:scale-[0.98]">
@@ -743,12 +768,12 @@ export default function AdminPage() {
                     <button onClick={prevRound} disabled={session.currentRound === 0} className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50">
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    {session.currentRound >= MAX_ROUND_INDEX ? (
+                    {session.currentRound >= maxRoundIndex ? (
                       <button onClick={finishEvent} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
                         Finish Event <Check className="w-4 h-4" />
                       </button>
                     ) : (
-                      <button onClick={nextRound} disabled={session.currentRound >= MAX_ROUND_INDEX} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
+                      <button onClick={nextRound} disabled={session.currentRound >= maxRoundIndex} className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold transition-all active:scale-[0.98] shadow-sm disabled:opacity-50">
                         Next <ArrowRight className="w-4 h-4" />
                       </button>
                     )}

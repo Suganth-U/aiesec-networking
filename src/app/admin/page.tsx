@@ -7,9 +7,35 @@ import { Session, User } from '@/types';
 import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle, ArrowRightLeft, Download } from 'lucide-react';
 import { GROUPS, MATCHMAKING_MATRIX } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
+import QuestionManagerModal from '@/components/QuestionManagerModal';
 
 const DEFAULT_PASSWORD = 'admin123';
 const DEFAULT_ROUND_TIME = 300; // 5 minutes
+
+const LEVEL_QUESTIONS = [
+  // Level 1 (Round index 0)
+  [
+    "What's something you're genuinely excited about right now?",
+    "What's something you enjoy that most people here don't know about",
+    "If you had one completely free day, how would you spend it?"
+  ],
+  // Level 2 (Round index 1)
+  [
+    "What have you worked really hard for that people don't usually see?",
+    "What challenge changed the way you see yourself?",
+    "When was the last time you felt genuinely proud of yourself?"
+  ],
+  // Level 3 (Round index 2)
+  [
+    "What is a dream you're still actively working towards?",
+    "What kind of person are you trying to become?",
+    "What do you hope your future self will thank you for?"
+  ],
+  // Level 4 (Round index 3)
+  [
+    "What is one thing AIESEC has made you realize about yourself that you probably wouldn't have discovered otherwise?"
+  ]
+];
 
 export default function AdminPage() {
   // ── Auth State ──
@@ -30,10 +56,10 @@ export default function AdminPage() {
   // ── App State ──
   const [session, setSession] = useState<Session | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [newQuestion, setNewQuestion] = useState('');
   const [broadcastText, setBroadcastText] = useState('');
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState('');
+
+  // ── Question Modal State ──
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
 
   // ── Confirm Modal State ──
   const [confirmConfig, setConfirmConfig] = useState({
@@ -196,16 +222,31 @@ export default function AdminPage() {
   const nextRound = async () => {
     if (!session) return;
     const nextRnd = Math.min(session.currentRound + 1, maxRoundIndex);
-    await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting' });
-    const batch = writeBatch(db);
-    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
-    await batch.commit();
+    
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Start Next Round',
+      message: `Are you sure you want to start Round ${nextRnd + 1}? This will reset the timer and shuffle partners.`,
+      isDangerous: false,
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        // Load default questions for the new round
+        const defaultQs = LEVEL_QUESTIONS[nextRnd] || [];
+        await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
+        
+        // Reset users' finished status so they join the new round
+        const batch = writeBatch(db);
+        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
+        await batch.commit();
+      }
+    });
   };
 
   const prevRound = async () => {
     if (!session || session.currentRound === 0) return;
     const prevRnd = Math.max(session.currentRound - 1, 0);
-    await updateSession({ currentRound: prevRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting' });
+    const defaultQs = LEVEL_QUESTIONS[prevRnd] || [];
+    await updateSession({ currentRound: prevRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', questions: defaultQs });
     const batch = writeBatch(db);
     users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
     await batch.commit();
@@ -219,7 +260,8 @@ export default function AdminPage() {
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false });
+        const defaultQs = LEVEL_QUESTIONS[0] || [];
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
         const batch = writeBatch(db);
         users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] }));
         await batch.commit();
@@ -235,8 +277,9 @@ export default function AdminPage() {
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        const defaultQs = LEVEL_QUESTIONS[0] || [];
         // Instantly reset session to waiting so it doesn't auto-start or keep ticking
-        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false });
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
         
         // Delete all user documents
         for (const u of users) {
@@ -246,9 +289,15 @@ export default function AdminPage() {
     });
   };
 
-  const startSession = async () => {
+  const startSession = () => {
     if (!session) return;
-    await updateSession({ status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
+    setShowQuestionModal(true);
+  };
+
+  const confirmStartRound = async (questions: string[]) => {
+    if (!session) return;
+    setShowQuestionModal(false);
+    await updateSession({ questions, status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
     const batch = writeBatch(db);
     users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
     await batch.commit();
@@ -293,42 +342,8 @@ export default function AdminPage() {
     setBroadcastText('');
   };
 
-  const addQuestion = async () => {
-    if (!session || !newQuestion.trim()) return;
-    await updateSession({ questions: [...session.questions, newQuestion.trim()] });
-    setNewQuestion('');
-  };
 
-  const removeQuestion = (index: number) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Delete Question',
-      message: 'Are you sure you want to delete this discussion prompt?',
-      isDangerous: true,
-      onConfirm: async () => {
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        if (!session) return;
-        await updateSession({ questions: session.questions.filter((_, i) => i !== index) });
-      }
-    });
-  };
 
-  const saveEditQuestion = (index: number) => {
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Save Changes',
-      message: 'Are you sure you want to save the edits to this discussion prompt?',
-      isDangerous: false,
-      onConfirm: async () => {
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        if (!session || !editValue.trim()) return;
-        const newQuestions = [...session.questions];
-        newQuestions[index] = editValue.trim();
-        await updateSession({ questions: newQuestions });
-        setEditingIndex(null);
-      }
-    });
-  };
 
   // ══════════════════════════════════════
   // LOGIN SCREEN
@@ -633,6 +648,13 @@ export default function AdminPage() {
       {changePasswordModal}
       {confirmModal}
       {groupUsersModal}
+      <QuestionManagerModal 
+        isOpen={showQuestionModal}
+        onClose={() => setShowQuestionModal(false)}
+        initialQuestions={session.questions || []}
+        roundIndex={session.currentRound}
+        onStartRound={confirmStartRound}
+      />
 
       <div className="max-w-6xl mx-auto">
 
@@ -807,88 +829,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Icebreaker Questions Card */}
-            <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <MessageSquare className="w-4 h-4 text-zinc-400" />
-                <h2 className="text-sm font-semibold text-zinc-900">Discussion Questions</h2>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={newQuestion}
-                  onChange={(e) => setNewQuestion(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addQuestion()}
-                  placeholder="Type a new discussion question..."
-                  className="flex-1 bg-white border border-zinc-200 rounded-xl h-10 px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
-                />
-                <button
-                  onClick={addQuestion}
-                  disabled={!newQuestion.trim()}
-                  className="px-4 h-10 rounded-xl bg-zinc-900 text-white text-sm font-semibold hover:bg-zinc-800 transition-all disabled:opacity-30 active:scale-95"
-                >
-                  Add
-                </button>
-              </div>
-
-              <ul className="space-y-2">
-                {session.questions.map((q, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3 p-3 bg-white/5 backdrop-blur-md rounded-xl border border-zinc-100 group min-h-[52px]">
-                    {editingIndex === i ? (
-                      <div className="flex items-center gap-2 w-full">
-                        <input
-                          type="text"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveEditQuestion(i);
-                            if (e.key === 'Escape') setEditingIndex(null);
-                          }}
-                          autoFocus
-                          className="flex-1 bg-white border border-zinc-200 rounded-lg h-8 px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all"
-                        />
-                        <button
-                          onClick={() => saveEditQuestion(i)}
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setEditingIndex(null)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-all"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="text-sm text-zinc-700 leading-relaxed">{q}</span>
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all shrink-0">
-                          <button
-                            onClick={() => {
-                              setEditingIndex(i);
-                              setEditValue(q);
-                            }}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
-                            title="Edit question"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => removeQuestion(i)}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                            title="Delete question"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
 
           {/* ── Right Column: Stats ── */}

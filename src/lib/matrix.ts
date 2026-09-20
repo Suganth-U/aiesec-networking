@@ -20,10 +20,10 @@ export const MATCHMAKING_MATRIX = [
   [[1, 4], [3, 6], [5, 8], [7, 2]],
   // Round 2: Shift 2 (1->6, 3->8, 5->2, 7->4)
   [[1, 6], [3, 8], [5, 2], [7, 4]],
-  // Round 3: Shift 3 (1->8, 3->2, 5->4, 7->6)
+  // Round 3 (Level 3): Shift 3 (1->8, 3->2, 5->4, 7->6)
   [[1, 8], [3, 2], [5, 4], [7, 6]],
-  // Round 4: Repeat Shift 1 (groups are large enough that they can talk to new individuals)
-  [[1, 4], [3, 6], [5, 8], [7, 2]],
+  // Round 4 (Level 4): Repeat Level 3 (stay with same partner)
+  [[1, 8], [3, 2], [5, 4], [7, 6]],
 ];
 
 /**

@@ -418,12 +418,18 @@ export default function NetworkPage() {
                     ))}
                   </div>
                   
-                  <button 
-                    onClick={() => setShowModal(false)}
-                    className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98]"
-                  >
-                    Close
-                  </button>
+                  {(() => {
+                    const allChecked = icebreakers.length > 0 && icebreakers.every((_, i) => checkedQuestions[i]);
+                    return (
+                      <button 
+                        onClick={() => setShowModal(false)}
+                        disabled={!allChecked}
+                        className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {allChecked ? "Close" : "Tick all questions to close"}
+                      </button>
+                    );
+                  })()}
                 </motion.div>
               </motion.div>
             )}

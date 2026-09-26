@@ -120,7 +120,10 @@ export default function NetworkPage() {
   };
 
   const spinIcebreaker = () => {
-    if (!session?.questions?.length) return;
+    if (!session?.questions?.length) {
+      handleFinishRound();
+      return;
+    }
     const shuffled = [...session.questions].sort(() => 0.5 - Math.random());
     setIcebreakers(shuffled.slice(0, 3));
     setCheckedQuestions({});
@@ -383,8 +386,6 @@ export default function NetworkPage() {
                 </div>
               </div>
             </motion.div>
-              </div>
-            </motion.div>
           </div>
     
           <AnimatePresence>
@@ -425,7 +426,7 @@ export default function NetworkPage() {
                   </div>
                   
                   {(() => {
-                    const allChecked = icebreakers.length > 0 && icebreakers.every((_, i) => checkedQuestions[i]);
+                    const allChecked = icebreakers.length === 0 || icebreakers.every((_, i) => checkedQuestions[i]);
                     return (
                       <button 
                         onClick={() => {

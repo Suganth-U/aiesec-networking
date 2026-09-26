@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import BroadcastOverlay from '@/components/BroadcastOverlay';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, Search, Clock, Sparkles, AlertCircle, ArrowLeft, Users as UsersIcon } from 'lucide-react';
+import { CheckCircle2, Search, Clock, Sparkles, AlertCircle, ArrowLeft } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, setDoc } from 'firebase/firestore';
-import { Session, User, PartnerInfo } from '@/types';
-import { getGroupById, GROUPS } from '@/lib/matrix';
+import { Session, User } from '@/types';
+import { getGroupById, getTargetGroupForRound, MATCHMAKING_MATRIX } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
 import { AvatarCharacter } from '@/components/NationSymbols';
 
@@ -19,6 +19,9 @@ const FO_TO_ELEMENT: Record<string, 'water' | 'earth' | 'fire' | 'air'> = {
 const FO_TO_NATION: Record<string, string> = {
   iGT: 'Water Tribe', iGV: 'Earth Kingdom', oGT: 'Fire Nation', oGV: 'Air Nomads',
 };
+
+const TOTAL_ROUNDS = MATCHMAKING_MATRIX.length;
+const MAX_ROUND_INDEX = TOTAL_ROUNDS - 1;
 
 export default function NetworkPage() {
   const router = useRouter();
@@ -155,29 +158,18 @@ export default function NetworkPage() {
         );
       }
     
-      // ── Derive my info from group ID ──
       const myGroup = getGroupById(myGroupId);
       const myColors = myGroup ? getGroupColor(myGroup.color) : getGroupColor('Black');
       const myFO = myGroup?.name?.split(' - ')[0] || 'iGT';
       const myElement = FO_TO_ELEMENT[myFO] || 'water';
       const myNation = FO_TO_NATION[myFO] || 'Water Tribe';
-
-      // ── Derive partner info from user.partners (set by matchmaker) ──
-      const partners = user.partners || [];
-      const hasPartner = partners.length > 0;
-      const primaryPartner = partners[0] || null;
-      const isTriplet = partners.length > 1;
-
-      // Target display info (from first partner)
-      const targetFO = primaryPartner?.frontOffice || 'iGT';
+    
+      const targetGroupId = session.currentRound < TOTAL_ROUNDS ? getTargetGroupForRound(myGroupId, session.currentRound) : null;
+      const targetGroup = targetGroupId ? getGroupById(targetGroupId) : null;
+      const targetColors = targetGroup ? getGroupColor(targetGroup.color) : null;
+      const targetFO = targetGroup?.name?.split(' - ')[0] || 'iGT';
       const targetElement = FO_TO_ELEMENT[targetFO] || 'water';
       const targetNation = FO_TO_NATION[targetFO] || 'Water Tribe';
-      const targetRole = primaryPartner?.role || 'Member';
-      const targetName = primaryPartner?.name || 'Unknown';
-
-      // Derive totalRounds and maxRoundIndex from session
-      const totalRounds = session.totalRounds || 4;
-      const maxRoundIndex = totalRounds - 1;
     
       const minutes = Math.floor(session.timeRemaining / 60);
       const seconds = session.timeRemaining % 60;
@@ -217,7 +209,7 @@ export default function NetworkPage() {
       }
     
       // ── FINISHED ──
-      if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === maxRoundIndex)) {
+      if (session.status === 'finished' || (user.status === 'finished_round' && session.currentRound === MAX_ROUND_INDEX)) {
         return <CongratsScreen user={user} myElement={myElement} />;
       }
     
@@ -264,7 +256,7 @@ export default function NetworkPage() {
             <div className={`flex items-center justify-between px-4 py-3 rounded-xl border mb-4 ${isUrgent ? 'bg-red-500/10 border-red-500/30' : 'bg-white/5 border-white/10'}`}>
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${isUrgent ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-                <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of {totalRounds}</span>
+                <span className="text-xs font-semibold text-white/50 uppercase tracking-wide">Round {session.currentRound + 1} of {TOTAL_ROUNDS}</span>
               </div>
               <div className={`text-2xl font-bold font-mono tracking-tight ${isUrgent ? 'text-red-400' : 'text-white'}`}>
                 {minutes}:{seconds.toString().padStart(2, '0')}
@@ -272,141 +264,119 @@ export default function NetworkPage() {
             </div>
     
             {/* ═══ MATCHMAKING BATTLE CARD ═══ */}
-            {hasPartner ? (
-              <motion.div
-                key={session.currentRound}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="flex flex-col rounded-2xl overflow-hidden relative border border-white/10"
-              >
-                {/* Background image for target element */}
-                <div className="absolute inset-0 z-0">
-                  <img src={`/${targetElement}-bg.jpg`} alt="" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/80" />
-                </div>
-    
-                {/* VS Battle Layout */}
-                <div className="relative z-10 flex flex-col items-center justify-center p-4 sm:p-6">
-    
-                  {/* Characters Side by Side */}
-                  <div className="w-full flex items-end justify-center gap-2 sm:gap-4 mb-2">
-                    {/* Your Character - enters from left */}
-                    <motion.div
-                      initial={{ x: -100, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.2, duration: 0.6, type: 'spring', stiffness: 120 }}
-                      className="flex flex-col items-center flex-1 max-w-[45%]"
-                    >
-                      <motion.div
-                        animate={{ y: [-4, 4, -4] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <img src={{ water: '/katara.png', earth: '/Toph.png', fire: '/zuko.png', air: '/Aang.png' }[myElement]} alt="You" className="h-28 sm:h-36 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" />
-                      </motion.div>
-                    </motion.div>
-    
-                    {/* VS Badge */}
-                    <motion.div
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ delay: 0.5, duration: 0.5, type: 'spring', stiffness: 200 }}
-                      className="flex-shrink-0 -mb-2 z-20"
-                    >
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.5)] border-2 border-amber-300/50">
-                        <span className="text-base sm:text-lg font-black text-white drop-shadow-md tracking-tight">VS</span>
-                      </div>
-                    </motion.div>
-    
-                    {/* Opponent Character - enters from right */}
-                    <motion.div
-                      initial={{ x: 100, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 120 }}
-                      className="flex flex-col items-center flex-1 max-w-[45%]"
-                    >
-                      <motion.div
-                        animate={{ y: [4, -4, 4] }}
-                        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-                      >
-                        <img src={{ water: '/katara.png', earth: '/Toph.png', fire: '/zuko.png', air: '/Aang.png' }[targetElement]} alt="Target" className="h-28 sm:h-36 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" />
-                      </motion.div>
-                    </motion.div>
-                  </div>
-    
-                  {/* Labels under characters */}
-                  <div className="w-full flex items-start justify-between gap-2 mb-4">
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 }}
-                      className="flex-1 text-center"
-                    >
-                      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 font-semibold mb-1">You</p>
-                      <p className="text-sm sm:text-base font-black text-white">{myNation}</p>
-                      <p className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-wide">{myGroup?.name?.split(' - ')[1]}</p>
-                    </motion.div>
-    
-                    <div className="w-px" />
-    
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 }}
-                      className="flex-1 text-center"
-                    >
-                      <p className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-400/80 font-semibold mb-1">Find</p>
-                      <p className="text-xl sm:text-2xl font-black text-amber-300 mb-1">{targetName}</p>
-                      <p className="text-xs sm:text-sm font-bold text-white/70">{targetNation} · {targetRole}</p>
-                      
-                      {/* Show second partner for triplets */}
-                      {isTriplet && partners[1] && (
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <p className="text-[10px] uppercase tracking-widest text-amber-400/60 font-semibold mb-0.5">Also Find</p>
-                          <p className="text-base font-black text-amber-200">{partners[1].name}</p>
-                          <p className="text-[10px] text-white/50">{FO_TO_NATION[partners[1].frontOffice] || 'Unknown'} · {partners[1].role}</p>
-                        </div>
-                      )}
-                    </motion.div>
-                  </div>
-    
-                  {/* Icebreaker Button */}
-                  <div className="w-full mt-auto">
-                    <button onClick={icebreakers.length > 0 ? () => setShowModal(true) : spinIcebreaker} className="w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-all active:scale-[0.98] shadow-lg backdrop-blur-sm">
-                      <Sparkles className="w-5 h-5 text-amber-400" /> {icebreakers.length > 0 ? 'View Conversation Starters' : 'Get Conversation Starters'}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              /* No partner assigned */
-              <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
-                <UsersIcon className="w-12 h-12 text-white/30 mb-4" />
-                <h3 className="text-lg font-bold text-white mb-1">No Partner Assigned</h3>
-                <p className="text-sm text-white/50 text-center">Wait for the admin to generate matches for this round.</p>
+            <motion.div
+              key={session.currentRound}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="flex flex-col rounded-2xl overflow-hidden relative border border-white/10"
+            >
+              {/* Background image for target element */}
+              <div className="absolute inset-0 z-0">
+                <img src={`/${targetElement}-bg.jpg`} alt="" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/80" />
               </div>
-            )}
+    
+              {/* Removed ElementParticles */}
+    
+              {/* VS Battle Layout */}
+              <div className="relative z-10 flex flex-col items-center justify-center p-4 sm:p-6">
+    
+                {/* Characters Side by Side */}
+                <div className="w-full flex items-end justify-center gap-2 sm:gap-4 mb-2">
+                  {/* Your Character - enters from left */}
+                  <motion.div
+                    initial={{ x: -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.6, type: 'spring', stiffness: 120 }}
+                    className="flex flex-col items-center flex-1 max-w-[45%]"
+                  >
+                    <motion.div
+                      animate={{ y: [-4, 4, -4] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <img src={{ water: '/katara.png', earth: '/Toph.png', fire: '/zuko.png', air: '/Aang.png' }[myElement]} alt="You" className="h-28 sm:h-36 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" />
+                    </motion.div>
+                  </motion.div>
+    
+                  {/* VS Badge */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5, type: 'spring', stiffness: 200 }}
+                    className="flex-shrink-0 -mb-2 z-20"
+                  >
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.5)] border-2 border-amber-300/50">
+                      <span className="text-base sm:text-lg font-black text-white drop-shadow-md tracking-tight">VS</span>
+                    </div>
+                  </motion.div>
+    
+                  {/* Opponent Character - enters from right */}
+                  <motion.div
+                    initial={{ x: 100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.6, type: 'spring', stiffness: 120 }}
+                    className="flex flex-col items-center flex-1 max-w-[45%]"
+                  >
+                    <motion.div
+                      animate={{ y: [4, -4, 4] }}
+                      transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <img src={{ water: '/katara.png', earth: '/Toph.png', fire: '/zuko.png', air: '/Aang.png' }[targetElement]} alt="Target" className="h-28 sm:h-36 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]" />
+                    </motion.div>
+                  </motion.div>
+                </div>
+    
+                {/* Labels under characters */}
+                <div className="w-full flex items-start justify-between gap-2 mb-6">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex-1 text-center"
+                  >
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-white/40 font-semibold mb-1">You</p>
+                    <p className="text-sm sm:text-base font-black text-white">{myNation}</p>
+                    <p className="text-lg sm:text-xl font-black text-white/90 uppercase tracking-wide">{myGroup?.name?.split(' - ')[1]}</p>
+                  </motion.div>
+    
+                  <div className="w-px" />
+    
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="flex-1 text-center"
+                  >
+                    <p className="text-[10px] sm:text-xs uppercase tracking-widest text-amber-400/80 font-semibold mb-1">Find</p>
+                    <p className="text-sm sm:text-base font-black text-amber-300">{targetNation}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-white uppercase tracking-widest drop-shadow-lg">{targetGroup?.name?.split(' - ')[1]}</p>
+                  </motion.div>
+                </div>
+    
+                {/* Icebreaker Button */}
+                <div className="w-full mt-auto">
+                  <button onClick={icebreakers.length > 0 ? () => setShowModal(true) : spinIcebreaker} className="w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-all active:scale-[0.98] shadow-lg backdrop-blur-sm">
+                    <Sparkles className="w-5 h-5 text-amber-400" /> {icebreakers.length > 0 ? 'View Conversation Starters' : 'Get Conversation Starters'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
     
             {/* Finish */}
-            {hasPartner && (session.questions?.length === 0 || (icebreakers.length > 0 && icebreakers.every((_, i) => checkedQuestions[i]))) && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-4 pb-4"
+            <div className="mt-4 pb-4">
+              <button 
+                onClick={handleFinishRound} 
+                disabled={isFinishing || (icebreakers.length > 0 && !icebreakers.every((_, i) => checkedQuestions[i]))} 
+                className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-white/20 disabled:opacity-50"
               >
-                <button 
-                  onClick={handleFinishRound} 
-                  disabled={isFinishing} 
-                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(16,185,129,0.3)] border border-emerald-400/30 disabled:opacity-50"
-                >
-                  {isFinishing ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === maxRoundIndex ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
-                  )}
-                </button>
-              </motion.div>
-            )}
+                {isFinishing ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === MAX_ROUND_INDEX ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
+                )}
+              </button>
+            </div>
           </div>
     
           <AnimatePresence>
@@ -415,51 +385,45 @@ export default function NetworkPage() {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
               >
-              <motion.div 
-                initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-                className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 relative overflow-hidden flex flex-col"
-                style={{ maxHeight: '80vh' }}
-              >
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400" /> Conversation Starters
-                </h3>
-                
-                <div className="space-y-3 mb-6 overflow-y-auto pr-1 flex-1">
-                  {icebreakers.map((q, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setCheckedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }))}
-                      className={`flex items-center justify-between gap-4 bg-white/5 border rounded-xl p-4 text-left cursor-pointer transition-all active:scale-[0.98] ${checkedQuestions[idx] ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 hover:bg-white/10'}`}
-                    >
-                      <div className="flex gap-3 items-start flex-1">
-                        <span className={`font-avatar tracking-widest text-lg mt-0.5 ${checkedQuestions[idx] ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {idx + 1}.
-                        </span>
-                        <p className={`text-sm md:text-base font-medium leading-relaxed transition-colors ${checkedQuestions[idx] ? 'text-white/40 line-through' : 'text-white/90'}`}>
-                          {q}
-                        </p>
+                <motion.div 
+                  initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                  className="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 relative overflow-hidden flex flex-col"
+                  style={{ maxHeight: '80vh' }}
+                >
+                  <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-amber-400" /> Conversation Starters
+                  </h3>
+                  
+                  <div className="space-y-3 mb-6 overflow-y-auto pr-1 flex-1">
+                    {icebreakers.map((q, idx) => (
+                      <div 
+                        key={idx} 
+                        onClick={() => setCheckedQuestions(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                        className={`flex items-center justify-between gap-4 bg-white/5 border rounded-xl p-4 text-left cursor-pointer transition-all active:scale-[0.98] ${checkedQuestions[idx] ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 hover:bg-white/10'}`}
+                      >
+                        <div className="flex gap-3 items-start flex-1">
+                          <span className={`font-avatar tracking-widest text-lg mt-0.5 ${checkedQuestions[idx] ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {idx + 1}.
+                          </span>
+                          <p className={`text-sm md:text-base font-medium leading-relaxed transition-colors ${checkedQuestions[idx] ? 'text-white/40 line-through' : 'text-white/90'}`}>
+                            {q}
+                          </p>
+                        </div>
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center border-2 transition-all ${checkedQuestions[idx] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 text-transparent bg-black/20'}`}>
+                          <CheckCircle2 className="w-4 h-4" strokeWidth={3} />
+                        </div>
                       </div>
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center border-2 transition-all ${checkedQuestions[idx] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/30 text-transparent bg-black/20'}`}>
-                        <CheckCircle2 className="w-4 h-4" strokeWidth={3} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {(() => {
-                const allChecked = icebreakers.length > 0 && icebreakers.every((_, i) => checkedQuestions[i]);
-                return (
+                    ))}
+                  </div>
+                  
                   <button 
                     onClick={() => setShowModal(false)}
-                    disabled={!allChecked}
-                    className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-12 flex items-center justify-center transition-all active:scale-[0.98]"
                   >
-                    {allChecked ? "Close" : "Tick all questions to close"}
+                    Close
                   </button>
-                );
-              })()}
+                </motion.div>
               </motion.div>
-            </motion.div>
             )}
           </AnimatePresence>
         </div>

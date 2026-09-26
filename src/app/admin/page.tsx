@@ -60,6 +60,7 @@ export default function AdminPage() {
 
   // ── Question Modal State ──
   const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [targetRoundIndex, setTargetRoundIndex] = useState(0);
 
   // ── Confirm Modal State ──
   const [confirmConfig, setConfirmConfig] = useState({
@@ -222,24 +223,8 @@ export default function AdminPage() {
   const nextRound = async () => {
     if (!session) return;
     const nextRnd = Math.min(session.currentRound + 1, maxRoundIndex);
-    
-    setConfirmConfig({
-      isOpen: true,
-      title: 'Start Next Round',
-      message: `Are you sure you want to start Round ${nextRnd + 1}? This will reset the timer and shuffle partners.`,
-      isDangerous: false,
-      onConfirm: async () => {
-        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        // Load default questions for the new round
-        const defaultQs = LEVEL_QUESTIONS[nextRnd] || [];
-        await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
-        
-        // Reset users' finished status so they join the new round
-        const batch = writeBatch(db);
-        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
-        await batch.commit();
-      }
-    });
+    setTargetRoundIndex(nextRnd);
+    setShowQuestionModal(true);
   };
 
   const prevRound = async () => {
@@ -291,13 +276,14 @@ export default function AdminPage() {
 
   const startSession = () => {
     if (!session) return;
+    setTargetRoundIndex(session.currentRound);
     setShowQuestionModal(true);
   };
 
   const confirmStartRound = async (questions: string[]) => {
     if (!session) return;
     setShowQuestionModal(false);
-    await updateSession({ questions, status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
+    await updateSession({ currentRound: targetRoundIndex, questions, status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
     const batch = writeBatch(db);
     users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
     await batch.commit();
@@ -651,8 +637,12 @@ export default function AdminPage() {
       <QuestionManagerModal 
         isOpen={showQuestionModal}
         onClose={() => setShowQuestionModal(false)}
-        initialQuestions={session.questions || []}
-        roundIndex={session.currentRound}
+        initialQuestions={
+          targetRoundIndex === session.currentRound && session.questions?.length
+            ? session.questions
+            : (LEVEL_QUESTIONS[targetRoundIndex] || [])
+        }
+        roundIndex={targetRoundIndex}
         onStartRound={confirmStartRound}
       />
 

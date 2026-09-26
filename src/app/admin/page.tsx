@@ -5,8 +5,9 @@ import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, collection, getDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { Session, User } from '@/types';
 import { Play, Pause, Plus, Minus, ArrowRight, ArrowLeft, Users, Clock, Zap, MessageSquare, Trash2, Lock, Eye, EyeOff, KeyRound, Shield, LogOut, Pencil, Check, X, AlertTriangle, ArrowRightLeft, Download } from 'lucide-react';
-import { GROUPS, MATCHMAKING_MATRIX } from '@/lib/matrix';
+import { GROUPS } from '@/lib/matrix';
 import { getGroupColor } from '@/lib/colors';
+import { generateMatches, MatchUser } from '@/lib/matchmaker';
 import QuestionManagerModal from '@/components/QuestionManagerModal';
 
 const DEFAULT_PASSWORD = 'admin123';
@@ -74,7 +75,7 @@ export default function AdminPage() {
   const [selectedGroupForModal, setSelectedGroupForModal] = useState<string | null>(null);
 
   // ── Derived Round Config ──
-  const totalRounds = session?.totalRounds || MATCHMAKING_MATRIX.length;
+  const totalRounds = session?.totalRounds || 4;
   const maxRoundIndex = totalRounds - 1;
 
   // ── Load/Initialize admin password from Firestore ──
@@ -219,6 +220,82 @@ export default function AdminPage() {
     await updateDoc(doc(db, 'sessions', 'main-event'), updates);
   };
 
+  // ── Dynamic Matchmaker Helper ──
+  const runMatchmaker = async (
+    roundIndex: number,
+    questions: string[],
+    status: 'waiting' | 'active',
+  ) => {
+    const matchUsers: MatchUser[] = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      frontOffice: u.frontOffice,
+      role: u.role,
+      metUsers: u.metUsers || [],
+    }));
+
+    const { pairs } = generateMatches(matchUsers);
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    // Build admin-visible match list
+    const currentMatches = pairs.map(pair => ({
+      users: pair,
+      names: pair.map(uid => userMap.get(uid)?.name || 'Unknown'),
+    }));
+
+    const batch = writeBatch(db);
+
+    // For each pair/triplet, write partner info to every user in the group
+    for (const pair of pairs) {
+      for (const uid of pair) {
+        const partners = pair
+          .filter(id => id !== uid)
+          .map(partnerId => {
+            const partner = userMap.get(partnerId);
+            return {
+              uid: partnerId,
+              name: partner?.name || 'Unknown',
+              frontOffice: partner?.frontOffice || 'iGT',
+              role: partner?.role || 'Member',
+            };
+          });
+
+        const existingMet = userMap.get(uid)?.metUsers || [];
+        const newPartnerIds = pair.filter(id => id !== uid);
+        const newMetUsers = [...new Set([...existingMet, ...newPartnerIds])];
+
+        batch.update(doc(db, 'users', uid), {
+          partners,
+          metUsers: newMetUsers,
+          status: 'waiting',
+        });
+      }
+    }
+
+    // Handle users not in any pair (edge case with < 2 users)
+    const pairedUserIds = new Set(pairs.flat());
+    for (const u of users) {
+      if (!pairedUserIds.has(u.id)) {
+        batch.update(doc(db, 'users', u.id), {
+          partners: [],
+          status: 'waiting',
+        });
+      }
+    }
+
+    // Update session atomically with matches
+    batch.update(doc(db, 'sessions', 'main-event'), {
+      currentRound: roundIndex,
+      timeRemaining: DEFAULT_ROUND_TIME,
+      status,
+      isPaused: false,
+      questions,
+      currentMatches,
+    });
+
+    await batch.commit();
+  };
+
   const nextRound = async () => {
     if (!session) return;
     const nextRnd = Math.min(session.currentRound + 1, maxRoundIndex);
@@ -226,18 +303,12 @@ export default function AdminPage() {
     setConfirmConfig({
       isOpen: true,
       title: 'Start Next Round',
-      message: `Are you sure you want to start Round ${nextRnd + 1}? This will reset the timer and shuffle partners.`,
+      message: `Are you sure you want to start Round ${nextRnd + 1}? This will generate new matches and avoid repeat pairings.`,
       isDangerous: false,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
-        // Load default questions for the new round
         const defaultQs = LEVEL_QUESTIONS[nextRnd] || [];
-        await updateSession({ currentRound: nextRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
-        
-        // Reset users' finished status so they join the new round
-        const batch = writeBatch(db);
-        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
-        await batch.commit();
+        await runMatchmaker(nextRnd, defaultQs, 'waiting');
       }
     });
   };
@@ -246,24 +317,21 @@ export default function AdminPage() {
     if (!session || session.currentRound === 0) return;
     const prevRnd = Math.max(session.currentRound - 1, 0);
     const defaultQs = LEVEL_QUESTIONS[prevRnd] || [];
-    await updateSession({ currentRound: prevRnd, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', questions: defaultQs });
-    const batch = writeBatch(db);
-    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
-    await batch.commit();
+    await runMatchmaker(prevRnd, defaultQs, 'waiting');
   };
 
   const resetSession = () => {
     setConfirmConfig({
       isOpen: true,
       title: 'Reset Session',
-      message: 'Are you sure you want to reset the entire session? This will restart the event to Round 1.',
+      message: 'Are you sure you want to reset the entire session? This will restart the event to Round 1 and clear all match history.',
       isDangerous: true,
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         const defaultQs = LEVEL_QUESTIONS[0] || [];
-        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs, currentMatches: [] });
         const batch = writeBatch(db);
-        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting', metUsers: [] }));
+        users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting', metUsers: [], partners: [] }));
         await batch.commit();
       }
     });
@@ -278,10 +346,8 @@ export default function AdminPage() {
       onConfirm: async () => {
         setConfirmConfig(prev => ({ ...prev, isOpen: false }));
         const defaultQs = LEVEL_QUESTIONS[0] || [];
-        // Instantly reset session to waiting so it doesn't auto-start or keep ticking
-        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs });
+        await updateSession({ currentRound: 0, timeRemaining: DEFAULT_ROUND_TIME, status: 'waiting', isPaused: false, questions: defaultQs, currentMatches: [] });
         
-        // Delete all user documents
         for (const u of users) {
           await deleteDoc(doc(db, 'users', u.id));
         }
@@ -297,10 +363,7 @@ export default function AdminPage() {
   const confirmStartRound = async (questions: string[]) => {
     if (!session) return;
     setShowQuestionModal(false);
-    await updateSession({ questions, status: 'active', timeRemaining: DEFAULT_ROUND_TIME, isPaused: false });
-    const batch = writeBatch(db);
-    users.forEach((u) => batch.update(doc(db, 'users', u.id), { status: 'waiting' }));
-    await batch.commit();
+    await runMatchmaker(session.currentRound, questions, 'active');
   };
 
   const finishEvent = () => {
@@ -905,42 +968,34 @@ export default function AdminPage() {
             <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
               <div className="flex items-center gap-2 mb-4">
                 <ArrowRightLeft className="w-4 h-4 text-zinc-400" />
-                <h2 className="text-sm font-semibold text-zinc-900">Live Match Matrix</h2>
+                <h2 className="text-sm font-semibold text-zinc-900">Live Pairings</h2>
+                <span className="ml-auto text-xs text-zinc-400">{session.currentMatches?.length || 0} pairs</span>
               </div>
-              <div className="space-y-3">
-                {session.currentRound < MATCHMAKING_MATRIX.length ? MATCHMAKING_MATRIX[session.currentRound].map((pair, idx) => {
-                  const g1 = GROUPS.find(g => g.id === pair[0]);
-                  const g2 = GROUPS.find(g => g.id === pair[1]);
-                  const u1Count = users.filter(u => u.frontOffice === g1?.name.split(' - ')[0] && u.role === g1?.name.split(' - ')[1]).length;
-                  const u2Count = users.filter(u => u.frontOffice === g2?.name.split(' - ')[0] && u.role === g2?.name.split(' - ')[1]).length;
-                  
-                  const c1 = g1 ? getGroupColor(g1.color) : { bg: 'bg-zinc-100', text: 'text-zinc-800', border: 'border-zinc-200', dot: 'bg-zinc-400' };
-                  const c2 = g2 ? getGroupColor(g2.color) : { bg: 'bg-zinc-100', text: 'text-zinc-800', border: 'border-zinc-200', dot: 'bg-zinc-400' };
-                  
-                  return (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100 relative overflow-hidden">
-                      {/* Left Side (G1) */}
-                      <div className="text-center w-[40%]">
-                        <span className="text-xs font-bold text-zinc-800 block">{g1?.name}</span>
-                        <span className="text-[10px] text-zinc-500">{u1Count} users</span>
-                      </div>
-                      
-                      {/* Center */}
-                      <div className="w-[20%] flex justify-center items-center relative z-10 shrink-0">
-                         <div className="bg-white rounded-full p-1.5 shadow-sm border border-zinc-100">
-                           <ArrowRightLeft className="w-3.5 h-3.5 text-zinc-400" />
-                         </div>
-                      </div>
-                      
-                      {/* Right Side (G2) */}
-                      <div className="text-center w-[40%]">
-                        <span className="text-xs font-bold text-zinc-800 block">{g2?.name}</span>
-                        <span className="text-[10px] text-zinc-500">{u2Count} users</span>
-                      </div>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {session.currentMatches && session.currentMatches.length > 0 ? session.currentMatches.map((match, idx) => (
+                  <div key={idx} className={`flex items-center justify-between p-3 rounded-xl border relative overflow-hidden ${match.users.length > 2 ? 'bg-amber-50 border-amber-200' : 'bg-zinc-50 border-zinc-100'}`}>
+                    {/* Names */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {match.names.map((name, nIdx) => (
+                        <span key={nIdx} className="flex items-center gap-1.5">
+                          {nIdx > 0 && (
+                            <div className="bg-white rounded-full p-1 shadow-sm border border-zinc-100 shrink-0">
+                              <ArrowRightLeft className="w-3 h-3 text-zinc-400" />
+                            </div>
+                          )}
+                          <span className="text-xs font-bold text-zinc-800 truncate">{name}</span>
+                        </span>
+                      ))}
                     </div>
-                  );
-                }) : (
-                  <div className="text-center py-4 text-sm text-zinc-500">Event Finished.</div>
+                    {/* Triplet badge */}
+                    {match.users.length > 2 && (
+                      <span className="text-[9px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full ml-2 shrink-0">TRIO</span>
+                    )}
+                  </div>
+                )) : (
+                  <div className="text-center py-4 text-sm text-zinc-500">
+                    {session.status === 'waiting' ? 'Matches will be generated when you start the round.' : 'No matches yet.'}
+                  </div>
                 )}
               </div>
             </div>

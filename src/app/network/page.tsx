@@ -364,18 +364,20 @@ export default function NetworkPage() {
             </motion.div>
     
             {/* Finish */}
-            <div className="mt-4 pb-4">
-              <button 
-                onClick={handleFinishRound} 
-                disabled={isFinishing || (icebreakers.length > 0 && !icebreakers.every((_, i) => checkedQuestions[i]))} 
-                className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-white/20 disabled:opacity-50"
-              >
-                {isFinishing ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === MAX_ROUND_INDEX ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
-                )}
-              </button>
+            <div className="mt-4 pb-4 min-h-[56px]">
+              {(!icebreakers.length || icebreakers.every((_, i) => checkedQuestions[i])) && (
+                <button 
+                  onClick={handleFinishRound} 
+                  disabled={isFinishing} 
+                  className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-white/20 disabled:opacity-50"
+                >
+                  {isFinishing ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === MAX_ROUND_INDEX ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
+                  )}
+                </button>
+              )}
             </div>
           </div>
     

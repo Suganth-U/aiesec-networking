@@ -388,12 +388,16 @@ export default function NetworkPage() {
             )}
     
             {/* Finish */}
-            {hasPartner && (
-              <div className="mt-4 pb-4">
+            {hasPartner && (session.questions?.length === 0 || (icebreakers.length > 0 && icebreakers.every((_, i) => checkedQuestions[i]))) && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 pb-4"
+              >
                 <button 
                   onClick={handleFinishRound} 
-                  disabled={isFinishing || (icebreakers.length > 0 && !icebreakers.every((_, i) => checkedQuestions[i]))} 
-                  className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-lg shadow-white/20 disabled:opacity-50"
+                  disabled={isFinishing} 
+                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold rounded-xl h-14 flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(16,185,129,0.3)] border border-emerald-400/30 disabled:opacity-50"
                 >
                   {isFinishing ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -401,7 +405,7 @@ export default function NetworkPage() {
                     <><CheckCircle2 className="w-5 h-5" /> {session.currentRound === maxRoundIndex ? "✅ Finish Event" : "Done! Ready for Next Round"}</>
                   )}
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
     
